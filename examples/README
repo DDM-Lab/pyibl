@@ -1,0 +1,20 @@
+This directory contains three sample models built with PyIBL, a Python
+implementation of a subset of Instance Based Learning Theory,
+distributed by Carnegie Mellon University's Dynamic Decision Making
+Laboratory. More information, including where to download PyIBL,
+is available at http://pyibl.ddmlabl.com.
+
+These versions of these sample models run against version 4.0 of
+PyIBL. The examples will not run against version 3.0 or earlier
+versions of PyIBL
+
+The file safe_risky.py conatins an iterated, binary choice task,
+picking between two choices, one safe and one risky, for three
+different likehoods for the risky outcome.
+
+The directory tpt contains an iterated, binary choice task,
+consisting of the sixty problems used as part of the Technion
+Prediction Tournament in 2008.
+
+The directory dd contains a multi-agent, iterated, binary choice task,
+the Diners' Dilemma, again consisting of sixty different problems.
