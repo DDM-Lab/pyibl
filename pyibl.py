@@ -9,6 +9,11 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
+__version__ = "4.1.3.dev1"
+
+if "dev" in __version__:
+    print("PyIBL version", __version__)
+
 import collections
 import collections.abc as abc
 import csv
@@ -26,8 +31,6 @@ from ordered_set import OrderedSet
 from pprint import pprint
 from prettytable import PrettyTable
 from warnings import warn
-
-__version__ = "4.1.2"
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -873,6 +876,7 @@ class DelayedResponse:
         return old
 
 
+# TODO update to reflect new semantics, including True as a similarity function    
 def similarity(function, *attributes):
     """Add a function to compute the similarity of attribute values that are not equal.
     The *attributes* are names of attributes of any :class:`Agent`. If called with no
