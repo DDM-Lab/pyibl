@@ -460,7 +460,7 @@ def test_partial_matching():
                     {"button": "b", "color": "blue", "size": 20})["button"] == "a"
 
 def test_insider():
-    # Note that tiny changes to the code could change the values being asserted.
+    # Note that tiny changes to the code could change the value being asserted.
     random.seed(0)
     x = insider.run()
     assert x == 0.82
