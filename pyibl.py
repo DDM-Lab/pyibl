@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.1.3.dev1"
+__version__ = "4.1.3.dev2"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
@@ -629,30 +629,31 @@ class Agent:
         if self._last_learn_time >= self._memory.time:
             self._memory.advance(self._last_learn_time - self._memory.time + 1)
         utilities = []
-        for c, q, i in zip(choices, queries, count()):
-            u = (self._memory.blend("_utility", **q), i)
-            if u[0] is None:
-                if self._default_utility:
-                    if self._callable_default_utility:
-                        u = (self._default_utility(c), i)
+        with self._memory.fixed_noise():
+            for c, q, i in zip(choices, queries, count()):
+                u = (self._memory.blend("_utility", **q), i)
+                if u[0] is None:
+                    if self._default_utility:
+                        if self._callable_default_utility:
+                            u = (self._default_utility(c), i)
+                        else:
+                            u = (self._default_utility, i)
+                        if self._default_utility_populates:
+                            self._at_time(0, lambda: self._memory.learn(_utility=u[0], **q))
                     else:
-                        u = (self._default_utility, i)
-                    if self._default_utility_populates:
-                        self._at_time(0, lambda: self._memory.learn(_utility=u[0], **q))
-                else:
-                    raise RuntimeError(f"No experience available for choice {c}")
-            utilities.append(u)
-            if details is not None:
-                d = collections.OrderedDict(q if self.attributes
-                                            else (("decision", q["_decision"]),))
-                d["activations"] = history
-                d["blended"] = u[0]
-                details.append(d)
-            if history is not None:
-                if self._trace:
-                    self._print_trace(q, u[0], history)
-                history = []
-                self._memory.activation_history = history
+                        raise RuntimeError(f"No experience available for choice {c}")
+                utilities.append(u)
+                if details is not None:
+                    d = collections.OrderedDict(q if self.attributes
+                                                else (("decision", q["_decision"]),))
+                    d["activations"] = history
+                    d["blended"] = u[0]
+                    details.append(d)
+                if history is not None:
+                    if self._trace:
+                        self._print_trace(q, u[0], history)
+                    history = []
+                    self._memory.activation_history = history
         best_utility = max(utilities, key=lambda x: x[0])[0]
         best = random.choice(list(filter(lambda x: x[0] == best_utility, utilities)))[1]
         self._pending_decision = (queries[best], best_utility)

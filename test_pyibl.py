@@ -463,7 +463,7 @@ def test_insider():
     # Note that tiny changes to the code could change the values being asserted.
     random.seed(0)
     x = insider.run()
-    assert x == 0.791
+    assert x == 0.82
 
 def test_delayed_feedback():
     random.seed(0)
