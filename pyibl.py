@@ -237,6 +237,11 @@ class Agent:
         empty list, whose value can be ascertained by consulting the value of
         :attr:`details`.
 
+        .. warning::
+            In complex models, or models with many iterations, the ``details`` can gather
+            a lot of information quickly. It is often best to ``clear()`` or otherwise 
+            reset the ``details`` frequently.
+
         A :exc:`ValueError` is raised if an attempt is made to set its value to anything
         other than ``None``, ``True`` or a :class:`MutableSequence`.
 
@@ -376,6 +381,14 @@ class Agent:
         (:attr:`mismatch_penalty`) is enabled, any instance that even partially matches a
         choice will prevent the iterrogation of this property.
 
+        .. warning::
+            It is rarely appropriate to use :attr:`default_utility` when partial matching
+            is being used. If they are used together the :attr:`default_utility` will
+            only be applied the first time a relevant choice is made, as all subsequent
+            choices will partially match. This generally gives unpredicatable results and
+            is rarely useful. Instead, when using partial matching it is usually better
+            to explicitly prepopulate appropriate instances using :meth:`populate`.
+
         The value of this property may be a :class:`Real`, in which case when needed it is
         simply used as the default utility. If it is not a Real, it is assumed to be a
         function that takes one argument, one of the choices passed to :meth:`choose`.
@@ -393,14 +406,6 @@ class Agent:
         causes no default utility to be used. In this case, if :meth:`choose` is called
         for a decision in a situation for which there is no instance available, an
         :exc:`RuntimeError` will be raised.
-
-        .. warning::
-            It is rarely appropriate to use :attr:`default_utility` when partial matching
-            is being used. If they are used together the :attr:`default_utility` will
-            only be applied the first time a relevant choice is made, as all subsequent
-            choices will partially match. This generally gives unpredicatable results and
-            is rarely useful. Instead, when using partial matching it is usually better
-            to explicitly prepopulate appropriate instances using :meth:`populate`.
         """
         return self._default_utility
 
@@ -821,7 +826,7 @@ class DelayedResponse:
         It is always learned at the time of the original call to :meth:`respond`.
 
         The most recent previous value of the learned reward, either the expected value, 
-        or that set by a previous call of :metho:`update`, is returned.
+        or that set by a previous call of :meth:`update`, is returned.
 
         Raises a :exc:`ValueError` if *outcome* is not a real number.
 
