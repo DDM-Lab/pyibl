@@ -206,8 +206,8 @@ class Agent:
         Otherwise any defined similarity functions (see :func:`similarity`) are called as necessary, and
         the resulting values are multiplied by the mismatch penalty and subtracted
         from the activation. For any attributes and decisions for which similarity
-        functions are not defined exact matches are viewed as maximally similar (1) and
-        any non-exact matches as maximally dissimilar (0).
+        functions are not defined only instances matching exactly on these attributes or
+        decisions are considered.
 
         Attempting to set this parameter to a value other than ``None`` or a real number
         raises a :exc:`ValueError`.
@@ -877,7 +877,6 @@ class DelayedResponse:
         return old
 
 
-# TODO update to reflect new semantics, including True as a similarity function    
 def similarity(function, *attributes):
     """Add a function to compute the similarity of attribute values that are not equal.
     The *attributes* are names of attributes of any :class:`Agent`. If called with no
@@ -902,6 +901,9 @@ def similarity(function, *attributes):
     If either of these constraints is violated no error is raised, but the results
     will, in most cases, be meaningless.
 
+    if ``True`` is passed as the value of *function* a default similarity function is
+    is used which returns one if its two arguments are ``==`` and zero otherwise.
+
     If ``None`` is passed as the value of *function* the similarity
     function(s) for the specified attributes are cleared.
 
@@ -924,47 +926,6 @@ def similarity(function, *attributes):
     pyactup.set_similarity_function(function or None,
                                     *(Agent._ensure_attribute_names(attributes)
                                       or [ "_decision" ]))
-
-def identity_similarity(x, y):
-    """Returns one if x and y are identical (Python's ``is``), and zero otherwise.
-Sometimes useful as an argument to similarity if you wish distinct attribute values
-not to prohibit consideration of a choice, but merely to reduce it's likelihood depending
-upon the :attr:`mismatch_penalty`.
-
->>> identity_similarity(1, 1)
-1
->>> identity_similarity(1, 1.0)
-0
-
->>> identity_similarity(None, False)
-0
->>> identity_similarity(None, None)
-1
->>> identity_similarity(False, 0)
-0
-"""
-    return int(x is y)
-
-def equality_similarity(x, y):
-    """Returns one if x and y are equal (Python's ``==``), and zero otherwise.
-Sometimes useful as an argument to similarity if you wish unequal attribute values
-not to prohibit consideration of a choice, but merely to reduce it's likelihood depending
-upon the :attr:`mismatch_penalty`.
-
->>> equality_similarity(0, 0.0)
-1
->>> sys.float_info.epsilon
-2.220446049250313e-16
->>> equality_similarity(_, 0)
-0
->>> equality_similarity(0, False)
-1
->>> equality_similarity(0, None)
-0
->>> equality_similarity(None, None)
-1
-"""
-    return int(x == y)
 
 def positive_linear_similarity(x, y):
     """Returns a similarity value of two positive :class:`Real` numbers, scaled linearly by the larger of them.
@@ -1035,7 +996,7 @@ The two arguments to the function returned should be :class:`Real` numbers betwe
 equal they are maximally similar, and one is returned. If the absolute value of their
 difference is as large as possible, they are maximally different, and zero is returned.
 Otherwise a scaled value on a linear scale between these two extrema, measuring the
-magnitude of the difference between the arguments two the returned function is used, a
+magnitude of the difference between the arguments to the returned function is used, a
 value between zero and one being returned.
 
 Raises a :exc:`ValueError` if either *minimum* or *maximum* is not a Real number, or if
@@ -1086,7 +1047,7 @@ and *maximum*, inclusive. If the two arguments to the function returned are equa
 maximally similar, and one is returned. If the absolute value of their difference is as
 large as possible, they are maximally different, and zero is returned. Otherwise a scaled
 value on a quadratic scale between these two extrema, measuring the magnitude of the
-difference between the arguments two the returned function is used, a value between zero
+difference between the arguments to the returned function is used, a value between zero
 and one being returned.
 
 Raises a :exc:`ValueError` if either *minimum* or *maximum* is not a Real number, or if

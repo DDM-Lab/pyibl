@@ -1,6 +1,6 @@
 .. Copyright 2014-2021 Carnegie Mellon University
 
-PyIBL version 4.1.2
+PyIBL version 4.1.3
 *******************
 
 .. contents::
@@ -67,12 +67,12 @@ which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
 After you `download PyIBL <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_,  you will
-have a file with a name something like ``pyibl-4.1.2.tar.gz``. Assuming you are
+have a file with a name something like ``pyibl-4.1.3.tar.gz``. Assuming you are
 using macOS or Linux, have a sufficiently recent version of Python and
 it's corresponding ``pip`` installed, and are in the same directory as
 this file you can install PyIBL by typing at the command line
 
-  .. parsed-literal:: pip install pyibl-4.1.2.tar.gz
+  .. parsed-literal:: pip install pyibl-4.1.3.tar.gz
 
 Depending upon various possible variations in how Python and your machine are configured
 you may have to modify the above in various ways
@@ -840,10 +840,6 @@ Reference
 
 .. autofunction:: similarity
 
-.. autofunction:: identity_similarity
-
-.. autofunction:: equality_similarity
-
 .. autofunction:: positive_linear_similarity
 
 .. autofunction:: positive_quadratic_similarity
@@ -941,6 +937,10 @@ value of that slot in the retrieval is :math:`S_{ik}`, the partial matching corr
 
 The value of :math:`\mu` should be positive, so :math:`P_{i}` is negative, and increasing dissimilarities
 reduce the total activation, scaled by the value of :math:`\mu`.
+
+Attributes for which no similarity function is defined are always matched exactly, non-matching instances not
+being considered at all. This is equivalent to such mismatching attributes having a negatively infinite
+mismatch partial matching correction.
 
 
 Blending
