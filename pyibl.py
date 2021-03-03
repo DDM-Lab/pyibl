@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.1.3.dev2"
+__version__ = "4.1.3"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
@@ -239,7 +239,7 @@ class Agent:
 
         .. warning::
             In complex models, or models with many iterations, the ``details`` can gather
-            a lot of information quickly. It is often best to ``clear()`` or otherwise 
+            a lot of information quickly. It is often best to ``clear()`` or otherwise
             reset the ``details`` frequently.
 
         A :exc:`ValueError` is raised if an attempt is made to set its value to anything
@@ -825,7 +825,7 @@ class DelayedResponse:
         might instead replace the value supplied by an earlier call to :meth:`update`.
         It is always learned at the time of the original call to :meth:`respond`.
 
-        The most recent previous value of the learned reward, either the expected value, 
+        The most recent previous value of the learned reward, either the expected value,
         or that set by a previous call of :meth:`update`, is returned.
 
         Raises a :exc:`ValueError` if *outcome* is not a real number.
