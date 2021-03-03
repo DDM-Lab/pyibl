@@ -629,7 +629,7 @@ class Agent:
         if self._last_learn_time >= self._memory.time:
             self._memory.advance(self._last_learn_time - self._memory.time + 1)
         utilities = []
-        with self._memory.fixed_noise():
+        with self._memory.fixed_noise:
             for c, q, i in zip(choices, queries, count()):
                 u = (self._memory.blend("_utility", **q), i)
                 if u[0] is None:
