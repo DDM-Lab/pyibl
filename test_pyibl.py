@@ -7,6 +7,7 @@ import re
 import sys
 
 from math import isclose
+from pprint import pprint
 
 from pyibl import *
 import insider
@@ -14,7 +15,7 @@ import insider
 def test_agent_init():
     a = Agent()
     assert re.fullmatch(r"agent-\d+", a.name)
-    assert a.attributes is ()
+    assert a.attributes == ()
     assert isclose(a.noise, 0.25)
     assert isclose(a.decay, 0.5)
     assert a.temperature is None
@@ -45,7 +46,7 @@ def test_agent_init():
     assert isclose(a.default_utility, 1)
     assert a.default_utility_populates
     assert a.time == 0
-    assert a2.attributes is ()
+    assert a2.attributes == ()
     assert isclose(a2.noise, 0.25)
     assert isclose(a2.decay, 0.5)
     assert a2.temperature is None
@@ -459,6 +460,68 @@ def test_partial_matching():
     assert a.choose({"button": "a", "color": "red", "size": 5},
                     {"button": "b", "color": "blue", "size": 20})["button"] == "a"
 
+def test_partial_activations():
+    a = Agent(temperature=1, noise=0, attributes=["attr"])
+    a.populate(0, {"attr": 1}, {"attr": 2}, {"attr": 3})
+    a.populate(9, {"attr": 1}, {"attr": 2}, {"attr": 3})
+    a.populate(4, {"attr": 1})
+    a.populate(6, {"attr": 2})
+    a.details = True
+    c = a.choose({"attr": 1}, {"attr": 2}, {"attr": 3})
+    assert c["attr"] == 2
+    assert isclose(a.details[0][0]["blended"], 4.333333333333333)
+    assert isclose(a.details[0][1]["blended"], 5)
+    assert isclose(a.details[0][2]["blended"], 4.5)
+    for d1 in a.details[0]:
+        for d2 in d1["activations"]:
+            assert d2.get("mismatch") is None
+    a.respond(-20)
+    a.mismatch_penalty = 5
+    a.details.clear()
+    c = a.choose({"attr": 1}, {"attr": 2}, {"attr": 3})
+    assert c["attr"] == 3
+    assert isclose(a.details[0][0]["blended"], 4.333333333333333)
+    assert isclose(a.details[0][1]["blended"], -3.009431025426018)
+    assert isclose(a.details[0][2]["blended"], 4.5)
+    for d1 in a.details[0]:
+        for d2 in d1["activations"]:
+            assert isclose(d2["mismatch"], 0)
+    a.respond(-20)
+    similarity(True, "attr")
+    a.details.clear()
+    c = a.choose({"attr": 1}, {"attr": 2}, {"attr": 3})
+    assert c["attr"] == 1
+    assert isclose(a.details[0][0]["blended"], 4.179723593644641)
+    assert isclose(a.details[0][1]["blended"], -2.2435213562801173)
+    assert isclose(a.details[0][2]["blended"], -6.775779766415437)
+    for d1 in a.details[0]:
+        for d2 in d1["activations"]:
+            assert isclose(d2["mismatch"], 0) or isclose(d2["mismatch"], -5)
+    a.respond(-20)
+    similarity(bounded_linear_similarity(-20, 10), "attr")
+    a.details.clear()
+    c = a.choose({"attr": 1}, {"attr": 2}, {"attr": 3})
+    assert c["attr"] == 2
+    assert isclose(a.details[0][0]["blended"], -4.348084167341177)
+    assert isclose(a.details[0][1]["blended"], -4.191899625084612)
+    assert isclose(a.details[0][2]["blended"], -4.3259594953443665)
+    for d1 in a.details[0]:
+        for d2 in d1["activations"]:
+            assert (isclose(d2["mismatch"], 0)
+                    or isclose(d2["mismatch"], -0.16666666666666663)
+                    or isclose(d2["mismatch"], -0.33333333333333326))
+    a.respond(0)
+    a.noise = 0.25
+    a.details.clear()
+    c = a.choose({"attr": 1}, {"attr": 2}, {"attr": 3})
+    v1 = a.details[0][0]["activations"]
+    v2 = a.details[0][1]["activations"]
+    v3 = a.details[0][2]["activations"]
+    assert len(v1) == len(v2) and len(v1) == len(v3)
+    for i in range(len(v1)):
+        assert v1[i]["activation_noise"] == v2[i]["activation_noise"]
+        assert v1[i]["activation_noise"] == v3[i]["activation_noise"]
+
 def test_insider():
     # Note that tiny changes to the code could change the value being asserted.
     random.seed(0)
@@ -603,18 +666,18 @@ def test_trace(capsys):
     assert len(capsys.readouterr().out) > len(x)
 
 def test_identity_similarity():
-    assert identity_similarity(1, 1) is 1
-    assert identity_similarity(1, 1.0) is 0
-    assert identity_similarity(None, False) is 0
-    assert identity_similarity(None, None) is 1
-    assert identity_similarity(False, 0) is 0
+    assert identity_similarity(1, 1) == 1
+    assert identity_similarity(1, 1.0) == 0
+    assert identity_similarity(None, False) == 0
+    assert identity_similarity(None, None) == 1
+    assert identity_similarity(False, 0) == 0
 
 def test_equality_similarity():
-    assert equality_similarity(0, 0.0) is 1
-    assert equality_similarity(sys.float_info.epsilon, 0) is 0
-    assert equality_similarity(0, False) is 1
-    assert equality_similarity(0, None) is 0
-    assert equality_similarity(None, None) is 1
+    assert equality_similarity(0, 0.0) == 1
+    assert equality_similarity(sys.float_info.epsilon, 0) == 0
+    assert equality_similarity(0, False) == 1
+    assert equality_similarity(0, None) == 0
+    assert equality_similarity(None, None) == 1
 
 def test_positive_linear_similarity():
     assert isclose(positive_linear_similarity(1, 2), 0.5)
