@@ -665,20 +665,6 @@ def test_trace(capsys):
     a.respond(0)
     assert len(capsys.readouterr().out) > len(x)
 
-def test_identity_similarity():
-    assert identity_similarity(1, 1) == 1
-    assert identity_similarity(1, 1.0) == 0
-    assert identity_similarity(None, False) == 0
-    assert identity_similarity(None, None) == 1
-    assert identity_similarity(False, 0) == 0
-
-def test_equality_similarity():
-    assert equality_similarity(0, 0.0) == 1
-    assert equality_similarity(sys.float_info.epsilon, 0) == 0
-    assert equality_similarity(0, False) == 1
-    assert equality_similarity(0, None) == 0
-    assert equality_similarity(None, None) == 1
-
 def test_positive_linear_similarity():
     assert isclose(positive_linear_similarity(1, 2), 0.5)
     assert isclose(positive_linear_similarity(2, 1), 0.5)

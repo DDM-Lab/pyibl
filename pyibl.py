@@ -9,7 +9,9 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.1.3"
+__version__ = "4.2.dev1"
+
+PYACTUP_MINIMUM_VERSION = "1.1.1"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
@@ -24,13 +26,24 @@ import pyactup
 import random
 import re
 import sys
+import warnings
 
 from itertools import count
 from keyword import iskeyword
 from ordered_set import OrderedSet
+from packaging import version
 from pprint import pprint
 from prettytable import PrettyTable
 from warnings import warn
+
+# Force warnings.warn() to omit the source code line in the message
+formatwarning_orig = warnings.formatwarning
+warnings.formatwarning = (lambda message, category, filename, lineno, line=None:
+                          formatwarning_orig(message, category, filename, lineno, line=''))
+
+if version.parse(pyactup.__version__) < version.parse(PYACTUP_MINIMUM_VERSION):
+    warn(f"PyACTUp version {pyactup.__version__} is older than that required by this version of PyIBL")
+
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -741,9 +754,10 @@ class Agent:
     def instances(self, file=sys.stdout, pretty=True):
         """Prints or returns all the instances currently stored in this :class:`Agent`.
         If *file* is ``None`` a list of dictionaries is returned, each corresponding
-        to an instance. If *file* is a string it is taken as a file name, opened for
-        writing, and the results printed thereto; otherwise *file* is assumed to be
-        an open, writable ``file``.
+        to an instance. If *file* is a string it is taken as a file name, which is opened
+        for writing, and the results printed thereto; otherwise *file* is assumed to be
+        an open, writable ``file``. By default the file is standard out, typically 
+        resulting in the instances being printed to the console.
 
         When printing to a file if *pretty* is true, the default, a format intended for
         reading by humans is used. Otherwise comma separated values (CSV) format, more
