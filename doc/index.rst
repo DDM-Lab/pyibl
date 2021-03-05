@@ -1,7 +1,7 @@
 .. Copyright 2014-2021 Carnegie Mellon University
 
-PyIBL version 4.1.3
-*******************
+PyIBL version 4.2
+*****************
 
 .. contents::
 
@@ -40,7 +40,7 @@ The latest version of PyIBL can be downloaded from the
 `DDMLab download site <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_.
 Registration is required.
 
-PyIBL requires Python version 3.6 or later. Recent versions of Mac OS X and recent Linux distributions
+PyIBL requires Python version 3.7 or later. Recent versions of Mac OS X and recent Linux distributions
 are likely to have a suitable version of Python pre-installed, but it may need to be invoked as ``python3``
 instead of just ``python``, which latter often runs a 2.x version of Python instead. Use of a virtual environment,
 which is recommended, often obviates the need for the ``python3``/``python`` distinction.
@@ -54,7 +54,7 @@ run faster in PyPy compared to CPython.
 Note that PyIBL is simply a Python module, a library, that is run as part of a larger
 Python program. To build and run models using PyIBL you do need to do
 some Python programming. If you're new to Python, a good place to
-start learning it is `The Python Tutorial <https://docs.python.org/3.6/tutorial/>`_.
+start learning it is `The Python Tutorial <https://docs.python.org/3.7/tutorial/>`_.
 To write and run a Python program you need to create and edit Python
 source files, and then run them. If you are comfortable using the command
 line, you can simply create and edit the files in your favorite text editor,
@@ -62,17 +62,17 @@ and run them from the command line. Many folks, though, are happier using
 a graphical Integrated Development Environment (IDE).
 `Many Python IDEs are available <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_.
 One  is
-`IDLE <https://docs.python.org/3.6/library/idle.html>`_,
+`IDLE <https://docs.python.org/3.7/library/idle.html>`_,
 which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
 After you `download PyIBL <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_,  you will
-have a file with a name something like ``pyibl-4.1.3.tar.gz``. Assuming you are
+have a file with a name something like ``pyibl-4.2.tar.gz``. Assuming you are
 using macOS or Linux, have a sufficiently recent version of Python and
 it's corresponding ``pip`` installed, and are in the same directory as
 this file you can install PyIBL by typing at the command line
 
-  .. parsed-literal:: pip install pyibl-4.1.3.tar.gz
+  .. parsed-literal:: pip install pyibl-4.2.tar.gz
 
 Depending upon various possible variations in how Python and your machine are configured
 you may have to modify the above in various ways
@@ -122,7 +122,7 @@ Likely the easiest way to get started with PyIBL is by looking at some examples 
 While much of what is in this chapter should be understandable even without much knowledge of Python, to
 write your own models you'll need to know how to write Python code.
 If you are new to Python, a good place to start may be
-the `Python Tutorial <https://docs.python.org/3.6/tutorial/>`_.
+the `Python Tutorial <https://docs.python.org/3.7/tutorial/>`_.
 
 A first example of using PyIBL
 ------------------------------
@@ -138,7 +138,7 @@ In the code blocks that follow, lines the user has typed begin with any of the t
 Other lines are printed by Python or some other command.
 
 First we launch Python, and make PyIBL available to it. While the output here was
-captured in a Linux distribution and virtual environment in which you launch Python version 3.6 by typing ``python``,
+captured in a Linux distribution and virtual environment in which you launch Python version 3.7 by typing ``python``,
 your installation my differ and you may launch it with ``python3``, ``py``, or something else
 entirely; or start an interactive session in a completely different way using a
 graphical IDE.
@@ -146,8 +146,8 @@ graphical IDE.
 .. code-block::
 
     $ python
-    Python 3.6.7 | packaged by conda-forge | (default, Jul  2 2019, 02:18:42)
-    [GCC 7.3.0] on linux
+    Python 3.9.0 | packaged by conda-forge | (default, Oct 14 2020, 22:59:50) 
+    [GCC 7.5.0] on linux
     Type "help", "copyright", "credits" or "license" for more information.
     >>> import pyibl
 
@@ -955,12 +955,13 @@ In PyIBL the value of this parameter is by default the :attr:`noise` parameter u
 multiplied by :math:`\sqrt{2}`. However it can be set independently of the ``noise``, if preferred.
 
 If *m* is the set of instances matching the criteria, and, for :math:`i \in m`, the activation
-of instance *i* is :math:`a_{i}`, we define a weight, the probability of retrieval, :math:`w_{i}`, for the contribution *i*
-makes to the blended value
+of instance *i* is :math:`a_{i}`, we define a weight, :math:`w_{i}`, used to compute a probability of retrieval
+describing the contribution *i* makes to the blended value
 
   .. math:: w_{i} = e^{a_{i} / \tau}
 
-If :math:`u_{i}` is the utility, that is outcome value, stored in instance *i*,
+The probabilty of retrieval is simply the weight divided by the sum of all the weights for a given potential outcome.
+If :math:`u_{i}` is the utility, that is the outcome value, stored in instance *i*,
 the  blended value, *BV*, is then
 
   .. math:: BV =\, \sum_{i \in m}{\, \frac{w_{i}}{\sum_{j \in m}{w_{j}}} \; u_{i}}
@@ -969,11 +970,21 @@ the  blended value, *BV*, is then
 Changes to PyIBL
 ================
 
+Changes between versions 4.1 and  4.2
+-------------------------------------
+
+* The :meth:`choose2` method has been added to the API.
+* The :meth:`respond` method now takes a second, optional argument.
+* There is more flexability possible when partially matching attributes.
+* PyIBL now requires Pythonn verison 3.7 or later.
+* General tidying and minor bug fixes.
+
+
 Changes between versions 4.0 and  4.1
 -------------------------------------
 
-* The API for :class:`DelayedFeedback` has been chanaged.
-* :meth:`Memory.reset()` now has an additional, optional argument, *preserve_prepopulated*.
+* The API for :class:`DelayedFeedback` has been changed.
+* The :meth:`reset()` now has an additional, optional argument, *preserve_prepopulated*.
 * Some minor bug fixes.
 
 

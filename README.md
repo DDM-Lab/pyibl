@@ -6,7 +6,7 @@ the Dynamic Decision Making Laboratory of Carnegie Mellon University for
 making computational cognitive models supporting research in how people make
 decisions in dynamic environments.
 
-PyIBL requires Python version 3.6 or later. PyIBL also works in recent
+PyIBL requires Python version 3.7 or later. PyIBL also works in recent
 versions of PyPy.
 
 For further information, including the documentation and instructions for

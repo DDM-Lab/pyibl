@@ -9,14 +9,13 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.2.dev1"
+__version__ = "4.2"
 
-PYACTUP_MINIMUM_VERSION = "1.1.1"
+PYACTUP_MINIMUM_VERSION = "1.1.2"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
 
-import collections
 import collections.abc as abc
 import csv
 import io
@@ -28,6 +27,7 @@ import re
 import sys
 import warnings
 
+from collections import namedtuple
 from itertools import count
 from keyword import iskeyword
 from ordered_set import OrderedSet
@@ -265,52 +265,45 @@ class Agent:
         >>> a.details = True
         >>> a.choose()
         'a'
-        >>> pprint(a.details)
-        [[OrderedDict([('decision', 'a'),
-                       ('activations',
-                        [OrderedDict([('name', '0000'),
-                                      ('creation_time', 1),
-                                      ('attributes',
-                                       (('_utility', 10), ('_decision', 'a'))),
-                                      ('references', (1,)),
-                                      ('base_activation', 0.0),
-                                      ('activation_noise', -0.1115130828909049),
-                                      ('activation', -0.1115130828909049),
-                                      ('retrieval_probability', 1.0)])]),
-                       ('blended', 10.0)]),
-          OrderedDict([('decision', 'b'),
-                       ('activations',
-                        [OrderedDict([('name', '0001'),
-                                      ('creation_time', 1),
-                                      ('attributes',
-                                       (('_utility', 10), ('_decision', 'b'))),
-                                      ('references', (1,)),
-                                      ('base_activation', 0.0),
-                                      ('activation_noise', 0.49069430928516194),
-                                      ('activation', 0.49069430928516194),
-                                      ('retrieval_probability', 1.0)])]),
-                       ('blended', 10.0)]),
-          OrderedDict([('decision', 'c'),
-                       ('activations',
-                        [OrderedDict([('name', '0002'),
-                                      ('creation_time', 1),
-                                      ('attributes',
-                                       (('_utility', 10), ('_decision', 'c'))),
-                                      ('references', (1,)),
-                                      ('base_activation', 0.0),
-                                      ('activation_noise', 0.0870818061822312),
-                                      ('activation', 0.0870818061822312),
-                                      ('retrieval_probability', 0.4420238074030374)]),
-                         OrderedDict([('name', '0003'),
-                                      ('creation_time', 1),
-                                      ('attributes',
-                                       (('_utility', 5), ('_decision', 'c'))),
-                                      ('references', (1,)),
-                                      ('base_activation', 0.0),
-                                      ('activation_noise', 0.16944297091092395),
-                                      ('activation', 0.16944297091092395),
-                                      ('retrieval_probability', 0.5579761925969626)])]),
-                       ('blended', 7.210119037015187)])]]
+        >>> pprint(a.details, sort_dicts=False)
+        [[{'decision': 'a',
+           'activations': [{'name': '0000',
+                            'creation_time': 0,
+                            'attributes': (('_utility', 10), ('_decision', 'a')),
+                            'references': (0,),
+                            'base_activation': -0.3465735902799726,
+                            'activation_noise': -0.1925212278297397,
+                            'activation': -0.5390948181097123,
+                            'retrieval_probability': 1.0}],
+           'blended': 10.0},
+          {'decision': 'b',
+           'activations': [{'name': '0001',
+                            'creation_time': 0,
+                            'attributes': (('_utility', 10), ('_decision', 'b')),
+                            'references': (0,),
+                            'base_activation': -0.3465735902799726,
+                            'activation_noise': -0.21036659990743722,
+                            'activation': -0.5569401901874098,
+                            'retrieval_probability': 1.0}],
+           'blended': 10.0},
+          {'decision': 'c',
+           'activations': [{'name': '0002',
+                            'creation_time': 0,
+                            'attributes': (('_utility', 10), ('_decision', 'c')),
+                            'references': (0,),
+                            'base_activation': -0.3465735902799726,
+                            'activation_noise': -0.0970213443277114,
+                            'activation': -0.44359493460768396,
+                            'retrieval_probability': 0.16296805894917318},
+                           {'name': '0003',
+                            'creation_time': 1,
+                            'attributes': (('_utility', 5), ('_decision', 'c')),
+                            'references': (1,),
+                            'base_activation': 0.0,
+                            'activation_noise': 0.1349273092778319,
+                            'activation': 0.1349273092778319,
+                            'retrieval_probability': 0.8370319410508268}],
+           'blended': 5.814840294745866}]]
         """
         return self._details
 
@@ -506,6 +499,8 @@ class Agent:
                          for c, a in zip(choice, self._attributes) }
             else:
                 raise ValueError(f"{choice} cannot be used as a choice")
+        elif choice is None:
+            raise ValueError(f"None cannot be used as a choice")
         elif isinstance(choice, abc.Hashable):
             return { "_decision": choice }
         else:
@@ -560,8 +555,8 @@ class Agent:
         """Selects which of the *choices* is expected to result in the largest payoff, and returns it.
         The expected form of the *choices* depends upon whether or not this :class:`Agent`
         has any attributes or not. If it does not, each of the *choices* should be a
-        :class:`Hashable`, representing an atomic choice; if any of the *choices* are not
-        hashable a :exc:`ValueError` is raised.
+        :class:`Hashable` that is not ``None``, representing an atomic choice; if any of
+        the *choices* are not hashable or are ``None`` a :exc:`ValueError` is raised.
 
         If this :class:`Agent` does have attributes (that is, the *attributes* argument
         was supplied and non-empty when it was created, or, equivalently, the
@@ -570,29 +565,29 @@ class Agent:
         names to their values, or a :class:`Sequence`, typically a :class:`list` or
         :class:`tuple`, containing attribute values in the order they were declared when
         this :class:`Agent` was created and would be returned by calling
-        :meth:`attributes`. Attributes not present (either no key in the :class:`Mapping`,
-        or a :class:`Sequence` shorter than the number of attributes) have a value of
-        `None`, while values not corresponding to attributes of the :class:`Agent` (either
-        a key in the :class:`Mapping` that does not match an attribute name, or a
-        :class:`Sequence` longer than the number of attributes) are ignored. Whether a
-        :class:`Mapping` or a :class:`Sequence`, all the attribute values must be
-        :class:`Hashable`, and are typically strings or numbers. If any of the *choices*
-        do not have one of these forms a :exc:`ValueError` is raised.
+        :meth:`attributes`. Attributes not present (either there is no key in the
+        :class:`Mapping`, or a :class:`Sequence` shorter than the number of attributes)
+        have a value of `None`, while values not corresponding to attributes of the
+        :class:`Agent` (either a key in the :class:`Mapping` that does not match an
+        attribute name, or a :class:`Sequence` longer than the number of attributes) are
+        ignored. Whether a :class:`Mapping` or a :class:`Sequence`, all the attribute
+        values must be :class:`Hashable`, and are typically strings or numbers. If any of
+        the *choices* do not have one of these forms a :exc:`ValueError` is raised.
 
         In either case, if any pair of the *choices* duplicate each other, even if of
         different forms (e.g. dictionary versus list), and after adding default ``None``
         values and removing ignored values, a :exc:`ValueError` is raised.
 
-        It is also possible to supply no *choices*, in which case those used
-        in the most recent previous call to this method are reused. If there was no
-        previous call to :meth:`choose` since the last time this :class:`Agent` was
-        :meth:`reset` a :exc:`ValueError` is raised.
+        It is also possible to supply no *choices*, in which case those used in the most
+        recent previous call to this method or :meth:`choose2` are reused. If there was no
+        such previous call since the last time this :class:`Agent` was :meth:`reset` a
+        :exc:`ValueError` is raised.
 
         For each of the *choices* this method finds all instances in memory that match,
         and computes their activations at the current time based upon when in the past
         they have been seen, modified by the value of the :attr:`decay` property, and with
         noise added as controlled by the :attr:`noise` property. If partial matching has
-        been enabled with :attr:`mismatch-penalty` such matching instances need not match
+        been enabled with :attr:`mismatch_penalty` such matching instances need not match
         exactly, and the similarities modified by the mismatch penalty are subtracted from
         the activations. If partial matching is not enabled only those instances that
         match exactly are consulted. "Exact" matches are based on Python's ``==``
@@ -608,8 +603,8 @@ class Agent:
         blended value. In case of a tie one will be chosen at random.
 
         After a call to :attr:`choose` a corresponding call must be made to
-        :meth:`respond` before calling :attr:`choose` again, or a :exc:`RuntimeError`
-        will be raised.
+        :meth:`respond` before calling :meth:`choose` again, or a :exc:`RuntimeError` will
+        be raised.
 
         Because of noise the results returned by :attr:`choose` are stochastic the results
         of running the following examples may differ in their details from those shown.
@@ -627,6 +622,70 @@ class Agent:
         ['parrot', 'squawking']
 
         """
+        return self._choose(choices, False)
+
+    def choose2(self, *choices):
+        """Selects which of the *choices* is expected to result in the largest payoff, and both returns it and data used to arrive at that selection.
+        While the comparison of blended values used by :meth:`choose` is the appropriate
+        process for most models, for some specialized purposes the modeler may wish to
+        implement different decision procedure. This method, when combined with supplying
+        a second argment to :meth:`respond`, facilitates the construction of such more
+        complicated models. See the description of :meth:`choose` for information on the
+        arguments and so on of this method, as, apart from the second return value, it
+        behaves just like :meth:`choose`.
+
+        The second return value is a list of named tuples, one for each choice. These
+        named tuples have slots for the choice, the blended value, and list of
+        retrieval probability descriptions. The slots can be accessed either by index,
+        or by the names ``.choice``, ``.blended_value`` and ``retrieval_probabilities``.
+
+        The retrieval probability descriptions are themselves named tuples, one for each
+        instance consulted in constructing the given choice's blended value. Each of these
+        latter tuples has two slots, one for the utility stored in the instance and the
+        other its probability of retrieval. The slots of these tuples can be accessed by
+        index or by the names ``.utility`` and ``.retrieval_probability``.
+
+        See the following example which may help clarify this rather complicated
+        description.
+
+        >>> a = Agent(name="Cheese Shop")
+        >>> a.populate(10, "Tilset", "Wensleydale")
+        >>> a.choose("Tilset", "Wensleydale")
+        'Tilset'
+        >>> a.respond(1)
+        >>> choice, data = a.choose2("Tilset", "Wensleydale")
+        >>> choice
+        'Wensleydale'
+        >>> data
+        [BlendingDetails(choice='Tilset', blended_value=4.167913364924516,
+                         retrieval_probabilities=[RetrievalProbability(utility=10, retrieval_probability=0.3519903738805018),
+                                                  RetrievalProbability(utility=1, retrieval_probability=0.6480096261194982)]),
+         BlendingDetails(choice='Wensleydale', blended_value=10.0,
+                         retrieval_probabilities=[RetrievalProbability(utility=10, retrieval_probability=1.0)])]
+        >>> data[0].choice
+        'Tilset'
+        >>> data[0].blended_value
+        4.167913364924516
+        >>> data[0].retrieval_probabilities[1].retrieval_probability
+        0.6480096261194982
+        >>> data[1][0]
+        'Wensleydale'
+        >>> data[1][1]
+        10.0
+        >>> data[1][2][0][0]
+        10
+        >>> data[1][2][0][1]
+        1.0
+        """
+        return self._choose(choices, True)
+
+    RetrievalProbability = namedtuple("RetrievalProbability",
+                                      ["utility", "retrieval_probability"])
+
+    BlendingDetails = namedtuple("BlendingDetails",
+                                 ["choice", "blended_value", "retrieval_probabilities"])
+
+    def _choose(self, choices, include_retrieval_probabilities):
         if self._pending_decision:
             raise RuntimeError("choice requested before previous outcome was supplied")
         choices = list(choices)
@@ -634,13 +693,12 @@ class Agent:
             if self._previous_choices:
                 choices = self._previous_choices
             else:
-                raise ValueError(
-                    "choose() called with no choices without having been called since reset")
+                raise ValueError("no choices were supplied and no default ones are available")
         queries = self._make_queries(choices)
         self._previous_choices = choices
         details = [] if self._details is not None else None
         try:
-            if details is not None or self._trace:
+            if include_retrieval_probabilities or details is not None or self._trace:
                 history = []
                 self._memory.activation_history = history
             else:
@@ -648,41 +706,60 @@ class Agent:
             if self._last_learn_time >= self._memory.time:
                 self._memory.advance(self._last_learn_time - self._memory.time + 1)
             utilities = []
+            ret_probs = []
             with self._memory.fixed_noise:
-                for c, q, i in zip(choices, queries, count()):
-                    u = (self._memory.blend("_utility", **q), i)
-                    if u[0] is None:
+                for c, q in zip(choices, queries):
+                    u = self._memory.blend("_utility", **q)
+                    if u is None:
                         if self._default_utility:
                             if self._callable_default_utility:
-                                u = (self._default_utility(c), i)
+                                u = self._default_utility(c)
                             else:
-                                u = (self._default_utility, i)
+                                u = self._default_utility
                             if self._default_utility_populates:
-                                self._at_time(0, lambda: self._memory.learn(_utility=u[0], **q))
+                                self._at_time(0, lambda: self._memory.learn(_utility=u, **q))
                         else:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
+                    if include_retrieval_probabilities:
+                        ret_probs.append([Agent.RetrievalProbability(Agent._extract_instance_utility(inst),
+                                                                     inst["retrieval_probability"])
+                                          for inst in self._memory.activation_history])
                     if details is not None:
-                        d = collections.OrderedDict(q if self.attributes
-                                                    else (("decision", q["_decision"]),))
+                        d = dict(q) if self.attributes else {"decision": q["_decision"]}
                         d["activations"] = history
-                        d["blended"] = u[0]
+                        d["blended"] = u
                         details.append(d)
                     if history is not None:
                         if self._trace:
-                            self._print_trace(q, u[0], history)
+                            self._print_trace(q, u, history)
                         history = []
                         self._memory.activation_history = history
         finally:
             self._memory.activation_history = None
-        best_utility = max(utilities, key=lambda x: x[0])[0]
-        best = random.choice(list(filter(lambda x: x[0] == best_utility, utilities)))[1]
-        self._pending_decision = (queries[best], best_utility)
         if self._details is not None:
             self._details.append(details)
         if self._trace:
             print(f"\n   {'='*140}")
-        return choices[best]
+        best_indecies = [0]
+        best_utility = utilities[0]
+        for u, i in zip(utilities[1:], count(1)):
+            if u > best_utility:
+                best_utility = u
+                best_indecies = [i]
+            elif u == best_utility:
+                best_indecies.append(i)
+        best = random.choice(best_indecies)
+        self._pending_decision = (best, choices, queries, utilities)
+        if include_retrieval_probabilities:
+            return choices[best], list(map(Agent.BlendingDetails, choices, utilities, ret_probs))
+        else:
+            return choices[best]
+
+    def _extract_instance_utility(inst):
+        first_attr = inst["attributes"][0]
+        assert first_attr[0] == "_utility"
+        return first_attr[1]
 
     def _print_trace(self, query, utility, history):
         print()
@@ -718,39 +795,57 @@ class Agent:
             tab.add_row(row)
         print(tab, flush=True)
 
-    def respond(self, outcome=None):
-        """Provide the *outcome* resulting from the most recent decision returned by :meth:`choose`.
+    def respond(self, outcome=None, choice=None):
+        """Provide the *outcome* resulting from the most recent decision selected by :meth:`choose` (or :meth:`choose2`)
         The *outcome* should be a real number, where larger numbers are considered "better."
         This results in the creation or reinforcemnt of an instance in memory for the
         decision with the given outcome, and is the fundamental way in which the PyIBL
         model "learns from experience."
 
-        It is also possible to delay feedback, by calling :meth:`respond` without an
-        argument. This tells the :class:`Agent` to assume it has received feedback equal
-        to that it expected, that is, the blended value resulting from past experiences.
-        In this case :meth:`respond` returns a value, a :class:`DelayedRespone` object,
-        which can be used subsequently to update the response.
+        By default the choice selected by :meth:`choose` (or :meth:`choose2`) is the one
+        to which the outcome is attached. In unusual cases, however, the modeler may
+        prefer to select a different choice. For example, if using a different decision
+        procedure based on the information returned by :meth:`choose2`, or if performing
+        model tracing of an individual human's behavior on the experiment being modeled.
+        To suppor these unusual cases a second argument may be passed to :meth:`respond`,
+        which is the choice to actually be made. If it is not one of the choices provided
+        in the original call to :meth:`choose` or :meth:`choose2` a ``ValueError`` is
+        raised.
+
+        It is also possible to delay feedback, by calling :meth:`respond` without
+        arguments, or with the first argument being ``None``. This tells the
+        :class:`Agent` to assume it has received feedback equal to that it expected, that
+        is, the blended value resulting from past experiences. In this case
+        :meth:`respond` returns a value, a :class:`DelayedRespone` object, which can be
+        used subsequently to update the response.
 
         .. warning::
             Delayed feedback is an experimental feature and care should be exercised in
             its use to avoid biologically implausible models.
 
-        If there has not been a call to :meth:`choose` since the last time respond was
-        called a :exc:`RuntimeError` is raised. If *outcome* is neither ``None`` nor a
+        If there has not been a call to :meth:`choose` since the last time :meth:`respond`
+        was called a :exc:`RuntimeError` is raised. If *outcome* is neither ``None`` nor a
         real number a :exc:`ValueError` is raised.
-
         """
         if not self._pending_decision:
             raise RuntimeError(
                 f"outcome {outcome} supplied when no decision requiring an outcome is pending")
+        best, choices, queries, utilities = self._pending_decision
+        if choice is None:
+            i = best
+        else:
+            try:
+                i = choices.index(choice)
+            except ValueError:
+                raise ValueError(f"{choice} is not one of choices originally provided")
         if outcome is not None:
-            self._memory.learn(_utility=Agent._outcome_value(outcome), **(self._pending_decision[0]))
+            self._memory.learn(_utility=Agent._outcome_value(outcome), **(queries[i]))
             self._last_learn_time = self._memory.time
             self._pending_decision = None
         else:
-            self._memory.learn(_utility=self._pending_decision[1], **(self._pending_decision[0]))
+            self._memory.learn(_utility=utilities[i], **(queries[i]))
             self._last_learn_time = self._memory.time
-            result = DelayedResponse(self, *self._pending_decision)
+            result = DelayedResponse(self, queries[i], utilities[i])
             self._pending_decision = None
             return result
 
@@ -759,7 +854,7 @@ class Agent:
         If *file* is ``None`` a list of dictionaries is returned, each corresponding
         to an instance. If *file* is a string it is taken as a file name, which is opened
         for writing, and the results printed thereto; otherwise *file* is assumed to be
-        an open, writable ``file``. By default the file is standard out, typically 
+        an open, writable ``file``. By default the file is standard out, typically
         resulting in the instances being printed to the console.
 
         When printing to a file if *pretty* is true, the default, a format intended for
@@ -771,7 +866,7 @@ class Agent:
             attrs = [ ("decision", "_decision") ]
         result = []
         for c in self._memory.values():
-            d = collections.OrderedDict((name, c[a]) for name, a in attrs)
+            d = {name: c[a] for name, a in attrs}
             d["outcome"] = c["_utility"]
             d["created"] = c._creation
             d["occurrences"] = c._references

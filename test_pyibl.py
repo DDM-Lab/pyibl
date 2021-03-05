@@ -200,6 +200,55 @@ def test_choose_simple():
     a.respond(10000)
     with pytest.raises(ValueError):
         a.choose("a", ["c"])
+    with pytest.raises(ValueError):
+        a.choose("a", "b", None, "d")
+
+def test_choose2():
+    a = Agent(temperature=1, noise=0)
+    a.populate(10, "A")
+    a.populate(5, "B")
+    assert a.choose(*"AB") == "A"
+    a.respond(0)
+    choice, details = a.choose2()
+    assert choice == "B"
+    assert len(details) == 2
+    bd = details[0]
+    assert bd.choice == "A" and isclose(bd.blended_value, 4.142135623730951)
+    p = bd.retrieval_probabilities
+    assert len(p) == 2
+    assert p[0].utility == 10
+    assert isclose(p[0].retrieval_probability, 0.4142135623730951)
+    assert p[0].utility == 10 and isclose(p[0].retrieval_probability, 0.4142135623730951)
+    assert p[1].utility == 0 and isclose(p[1].retrieval_probability, 0.585786437626905)
+    bd = details[1]
+    assert bd[0] == "B" and isclose(bd[1], 5.0)
+    p = bd[2]
+    assert len(p) == 1
+    assert p[0][0] == 5 and isclose(p[0][1], 1.0)
+
+def test_respond():
+    a = Agent(temperature=1, noise=0)
+    a.populate(10, "A")
+    a.populate(9, "B")
+    assert a.choose(*"AB") == "A"
+    assert a.respond(0) is None
+    assert a.choose() == "B"
+    assert a.respond(0, "A") is None
+    assert a.choose() == "B"
+    assert isclose(a.respond().expectation, 9.0)
+    assert a.choose() == "B"
+    df = a.respond(None, "A")
+    assert df._attributes["_decision"] == "A"
+    assert isclose(df.expectation, 2.8019727339170046)
+    pprint(a.instances(None), sort_dicts=False)
+    insts = a.instances(None)
+    assert insts[:-1] == [{'decision': 'A', 'outcome': 10, 'created': 0, 'occurrences': [0]},
+                          {'decision': 'B', 'outcome': 9, 'created': 0, 'occurrences': [0, 3]},
+                          {'decision': 'A', 'outcome': 0, 'created': 1, 'occurrences': [1, 2]}]
+    d = insts[-1]
+    assert isclose(d["outcome"], 2.8019727339170046)
+    del d["outcome"]
+    assert d ==  {"decision": "A", "created": 4, "occurrences": [4]}
 
 def test_populate():
     a = Agent()
@@ -636,6 +685,12 @@ def test_details():
     assert isclose(a.details[1][0]["blended"], 10.0)
     assert a.details[1][1]["decision"]
     assert isclose(a.details[1][1]["blended"], 3.0165853658536586)
+    assert not a.choose()
+    assert a.respond(0, True) is None
+    assert len(a.details) == 3 and len(a.details[-1]) == 2
+    first, second = a.details[-1]
+    assert not first["decision"] and isclose(first["blended"], 14.999915325994918)
+    assert second["decision"] and isclose(second["blended"], 3.2897807667338075)
     old = a.details
     new = ["a"]
     a.details = new
