@@ -133,7 +133,7 @@ class Agent:
 
     def reset(self, preserve_prepopulated=False, optimized_learning=None):
         """Erases this agent's memory and resets its time to zero.
-        If *preserve_prepopulated* is false it delets all the instances from this agent;
+        If *preserve_prepopulated* is false it deletes all the instances from this agent;
         if it is true it deletes all those not created at time zero. IBLT parameters such
         as :attr:`noise` and :attr:`decay` are not affected. Any prepopulated instances,
         including those created automatically if a :attr:`defaultUtility` is provided and
@@ -628,7 +628,7 @@ class Agent:
         """Selects which of the *choices* is expected to result in the largest payoff, and both returns it and data used to arrive at that selection.
         While the comparison of blended values used by :meth:`choose` is the appropriate
         process for most models, for some specialized purposes the modeler may wish to
-        implement different decision procedure. This method, when combined with supplying
+        implement a different decision procedure. This method, when combined with supplying
         a second argment to :meth:`respond`, facilitates the construction of such more
         complicated models. See the description of :meth:`choose` for information on the
         arguments and so on of this method, as, apart from the second return value, it
@@ -807,7 +807,7 @@ class Agent:
         prefer to select a different choice. For example, if using a different decision
         procedure based on the information returned by :meth:`choose2`, or if performing
         model tracing of an individual human's behavior on the experiment being modeled.
-        To suppor these unusual cases a second argument may be passed to :meth:`respond`,
+        To support these unusual cases a second argument may be passed to :meth:`respond`,
         which is the choice to actually be made. If it is not one of the choices provided
         in the original call to :meth:`choose` or :meth:`choose2` a ``ValueError`` is
         raised.

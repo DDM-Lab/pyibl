@@ -808,6 +808,8 @@ Reference
 
    .. automethod:: choose
 
+   .. automethod:: choose2
+
    .. automethod:: respond
 
    .. autoattribute:: default_utility
