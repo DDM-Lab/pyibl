@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.2"
+__version__ = "4.2.1"
 
 PYACTUP_MINIMUM_VERSION = "1.1.2"
 
@@ -480,7 +480,7 @@ class Agent:
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
             self._memory.learn(_utility=outcome, **choice)
-            self._last_learn_time = self._memory.time
+            self._last_learn_time = max(self._last_learn_time, self._memory.time)
 
     @staticmethod
     def _attribute_value(value, attribute):

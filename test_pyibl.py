@@ -272,6 +272,8 @@ def test_populate():
     assert inst["outcome"] == 30 and inst["created"] == 50
     inst = next(i for i in a.instances(None) if i["outcome"] == 40)
     assert inst["decision"] in "uvwx" and inst["created"] == 22
+    assert a.time == 50
+    assert a.choose(*"uvwx") in "uvwx"
 
 def test_reset():
     a = Agent(default_utility=1, noise=0.37, decay=0.55)
