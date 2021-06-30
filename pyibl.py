@@ -666,6 +666,8 @@ class Agent:
         'Tilset'
         >>> data[0].blended_value
         4.167913364924516
+        >>> data[0].retrieval_probabilities[1].utility
+        1
         >>> data[0].retrieval_probabilities[1].retrieval_probability
         0.6480096261194982
         >>> data[1][0]
