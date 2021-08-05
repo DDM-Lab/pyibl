@@ -396,18 +396,14 @@ def safe_risky(noise=0.25, decay=0.5, temperature=None, optimized_learning=False
 def test_safe_risky():
     # Note that tiny changes to the code could change the values being asserted.
     random.seed(0)
-    x = safe_risky()
-    assert isclose(x, 0.36800)
-    x = safe_risky(optimized_learning=True)
-    assert isclose(x, 0.43525)
-    x = safe_risky(decay=2)
-    assert isclose(x, 0.22425)
-    x = safe_risky(temperature=1, noise=0)
-    assert isclose(x, 0.25525)
-    x = safe_risky(risky_wins=0.6)
-    assert isclose(x, 0.54975)
-    x = safe_risky(risky_wins=0.4)
-    assert isclose(x, 0.29025)
+    results = []
+    results.append(safe_risky())
+    results.append(safe_risky(optimized_learning=True))
+    results.append(safe_risky(decay=2))
+    results.append(safe_risky(temperature=1, noise=0))
+    results.append(safe_risky(risky_wins=0.6))
+    results.append(safe_risky(risky_wins=0.4))
+    assert all(isclose(r, x) for r, x in zip(results, [0.359, 0.443, 0.227, 0.25, 0.56775, 0.271]))
 
 def form_choice(d):
     n = random.randrange(6)
@@ -577,7 +573,7 @@ def test_insider():
     # Note that tiny changes to the code could change the value being asserted.
     random.seed(0)
     x = insider.run()
-    assert x == 0.82
+    assert x == 0.7535
 
 def test_delayed_feedback():
     random.seed(0)
@@ -622,6 +618,7 @@ def test_delayed_feedback():
     assert isclose(dra.outcome, 15)
     assert isclose(dra.expectation, 10)
     inst = a.instances(None)
+    print(inst)
     assert len(inst) == 5
     assert next(i for i in inst
                 if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0

@@ -9,9 +9,9 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.2.1"
+__version__ = "4.2.2.dev1"
 
-PYACTUP_MINIMUM_VERSION = "1.1.2"
+PYACTUP_MINIMUM_VERSION = "1.1.4"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
@@ -871,7 +871,7 @@ class Agent:
             d = {name: c[a] for name, a in attrs}
             d["outcome"] = c["_utility"]
             d["created"] = c._creation
-            d["occurrences"] = c._references
+            d["occurrences"] = c.references
             result.append(d)
         if file is None:
             return result
