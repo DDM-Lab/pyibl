@@ -171,6 +171,27 @@ def test_default_utility():
     a.default_utility = lambda x: 1
     assert a.default_utility
 
+def test_advance():
+    a = Agent()
+    for i in range(2):
+        assert a.time == 0
+        assert a.advance(0) == 0
+        assert a.time == 0
+        assert a.advance() == 1
+        assert a.time == 1
+        assert a.advance(2) == 3
+        assert a.time == 3
+        with pytest.raises(ValueError):
+            a.advance(-1)
+        with pytest.raises(ValueError):
+            a.advance(1.00000001)
+        with pytest.raises(ValueError):
+            a.advance("foo")
+        with pytest.raises(ValueError):
+            a.advance(None)
+        assert a.time == 3
+        a.reset()
+
 def test_choose_simple():
     choices = ("a", "b")
     for d in (0.0, 0.1, 0.5, 1.0):

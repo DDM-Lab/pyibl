@@ -153,10 +153,22 @@ class Agent:
     @property
     def time(self):
         """This agent's current time.
-        Time in PyIBL is a dimensionless quantity, simply counting the number of
+        Time in PyIBL is a dimensionless quantity, typical just counting the number of
         choose/respond cycles that have occurred since the Memory was last :meth:`reset`.
         """
         return self._memory.time
+
+    def advance(self, increment=1):
+        """Advances the time of this agent by *increment* time steps.
+        The *increment*, which defaults to ``1``, should be a non-negative integer; if it
+        is not a :exc:`ValueError` is raised. Returns the updated :attr:`time`."""
+        try:
+            n = int(increment)
+        except:
+            n = None
+        if n is None or n != increment or n < 0:
+            raise ValueError(f"The increment, {increment}, is not a non-negative integer")
+        return self._memory.advance(n)
 
     @property
     def noise(self):

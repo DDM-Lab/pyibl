@@ -824,6 +824,8 @@ Reference
 
    .. autoattribute:: time
 
+   .. automethod:: advance
+
    .. autoattribute:: noise
 
    .. autoattribute:: decay
@@ -975,6 +977,9 @@ Changes to PyIBL
 Changes between versions 4.2 and 5.0
 ------------------------------------
 
+* The :meth:`advance` method has been added to the API.
+* Changes were made to the internal representations of instances enabling faster IBL computations in many use cases.
+* General tidying and minor bug fixes.
 
 
 Changes between versions 4.1 and 4.2
