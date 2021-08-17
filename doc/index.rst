@@ -1,6 +1,6 @@
 .. Copyright 2014-2021 Carnegie Mellon University
 
-PyIBL version 4.2
+PyIBL version 5.0
 *****************
 
 .. contents::
@@ -67,12 +67,12 @@ which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
 After you `download PyIBL <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_,  you will
-have a file with a name something like ``pyibl-4.2.tar.gz``. Assuming you are
+have a file with a name something like ``pyibl-5.0.tar.gz``. Assuming you are
 using macOS or Linux, have a sufficiently recent version of Python and
 it's corresponding ``pip`` installed, and are in the same directory as
 this file you can install PyIBL by typing at the command line
 
-  .. parsed-literal:: pip install pyibl-4.2.tar.gz
+  .. parsed-literal:: pip install pyibl-5.0.tar.gz
 
 Depending upon various possible variations in how Python and your machine are configured
 you may have to modify the above in various ways
@@ -972,8 +972,13 @@ the  blended value, *BV*, is then
 Changes to PyIBL
 ================
 
-Changes between versions 4.1 and  4.2
--------------------------------------
+Changes between versions 4.2 and 5.0
+------------------------------------
+
+
+
+Changes between versions 4.1 and 4.2
+------------------------------------
 
 * The :meth:`choose2` method has been added to the API.
 * The :meth:`respond` method now takes a second, optional argument.
@@ -982,16 +987,16 @@ Changes between versions 4.1 and  4.2
 * General tidying and minor bug fixes.
 
 
-Changes between versions 4.0 and  4.1
--------------------------------------
+Changes between versions 4.0 and 4.1
+------------------------------------
 
 * The API for :class:`DelayedFeedback` has been changed.
 * The :meth:`reset()` now has an additional, optional argument, *preserve_prepopulated*.
 * Some minor bug fixes.
 
 
-Changes between versions 3.0 and  4.0
--------------------------------------
+Changes between versions 3.0 and 4.0
+------------------------------------
 
 * Situations and SituationDecisions are no longer needed. Choices are now ordinary
   Python objects, such as dicts and lists.
@@ -1013,8 +1018,8 @@ Changes between versions 3.0 and  4.0
 * Some bugs have been fixed, and things have been made generally tidier internally.
 
 
-Changes between versions 2.0 and  3.0
--------------------------------------
+Changes between versions 2.0 and 3.0
+------------------------------------
 
 * Similarity and partial matching are now implemented.
 * SituationDecisions have changed completely, and are no longer created by an Agent.
