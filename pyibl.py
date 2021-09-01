@@ -491,7 +491,7 @@ class Agent:
         """
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
-            self._memory.learn(_utility=outcome, **choice)
+            self._memory.learn(Agent.add_utility(choice, outcome))
             self._last_learn_time = max(self._last_learn_time, self._memory.time)
 
     @staticmethod
@@ -522,6 +522,12 @@ class Agent:
         result = [ self._canonicalize_choice(c) for c in choices ]
         if len(set(tuple(d.items()) for d in result)) != len(result):
             raise ValueError("duplicate choices")
+        return result
+
+    @staticmethod
+    def add_utility(attributes, utility):
+        result = {"_utility": utility}
+        result.update(attributes)
         return result
 
     @staticmethod
@@ -723,7 +729,7 @@ class Agent:
             ret_probs = []
             with self._memory.fixed_noise:
                 for c, q in zip(choices, queries):
-                    u = self._memory.blend("_utility", **q)
+                    u = self._memory.blend("_utility", q)
                     if u is None:
                         if self._default_utility:
                             if self._callable_default_utility:
@@ -731,7 +737,7 @@ class Agent:
                             else:
                                 u = self._default_utility
                             if self._default_utility_populates:
-                                self._at_time(0, lambda: self._memory.learn(_utility=u, **q))
+                                self._at_time(0, lambda: self._memory.learn(Agent.add_utility(q, u)))
                         else:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
@@ -853,11 +859,11 @@ class Agent:
             except ValueError:
                 raise ValueError(f"{choice} is not one of choices originally provided")
         if outcome is not None:
-            self._memory.learn(_utility=Agent._outcome_value(outcome), **(queries[i]))
+            self._memory.learn(Agent.add_utility(queries[i], Agent._outcome_value(outcome)))
             self._last_learn_time = self._memory.time
             self._pending_decision = None
         else:
-            self._memory.learn(_utility=utilities[i], **(queries[i]))
+            self._memory.learn(Agent.add_utility(queries[i], utilities[i]))
             self._last_learn_time = self._memory.time
             result = DelayedResponse(self, queries[i], utilities[i])
             self._pending_decision = None
@@ -999,10 +1005,9 @@ class DelayedResponse:
         """
         outcome = Agent._outcome_value(outcome)
         old = self._outcome
-        self._agent._memory.forget(self._time, _utility=self._outcome, **self._attributes)
+        self._agent._memory.forget(Agent.add_utility(self._attributes, self._outcome), self._time)
         self._agent._at_time(self._time,
-                             lambda: self._agent._memory.learn(_utility=outcome,
-                                                               **self._attributes))
+                             lambda: self._agent._memory.learn(Agent.add_utility(self._attributes, outcome)))
         self._resolved = True
         self._outcome = outcome
         return old
@@ -1055,8 +1060,8 @@ def similarity(function, *attributes):
     >>> similarity(color_similarity, "color")
     """
     pyactup.set_similarity_function(function or None,
-                                    *(Agent._ensure_attribute_names(attributes)
-                                      or [ "_decision" ]))
+                                    (Agent._ensure_attribute_names(attributes)
+                                     or [ "_decision" ]))
 
 def positive_linear_similarity(x, y):
     """Returns a similarity value of two positive :class:`Real` numbers, scaled linearly by the larger of them.
