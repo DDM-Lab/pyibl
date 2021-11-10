@@ -80,7 +80,7 @@ class Agent:
         elif not (isinstance(name, str) and len(name) > 0):
             raise TypeError(f"Agent name {name} is not a non-empty string")
         self._name = name
-        self._memory = pyactup.Memory(learning_time_increment=0,
+        self._memory = pyactup.TabularMemory(learning_time_increment=0,
                                       optimized_learning=optimized_learning)
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise
