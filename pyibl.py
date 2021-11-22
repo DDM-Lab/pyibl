@@ -82,6 +82,7 @@ class Agent:
         self._name = name
         self._memory = pyactup.Memory(learning_time_increment=0,
                                       optimized_learning=optimized_learning,
+                                      index=(self._attributes or ["_decision"]),
                                       blend="_utility")
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise
