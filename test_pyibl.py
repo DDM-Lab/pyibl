@@ -6,11 +6,21 @@ import random
 import re
 import sys
 
+from contextlib import contextmanager
 from math import isclose
 from pprint import pprint
 
 from pyibl import *
 import insider
+
+@contextmanager
+def randomseed(n=0):
+    old = random.getstate()
+    try:
+        random.seed(n)
+        yield
+    finally:
+        random.setstate(old)
 
 def test_agent_init():
     a = Agent()
@@ -416,15 +426,15 @@ def safe_risky(noise=0.25, decay=0.5, temperature=None, optimized_learning=False
 
 def test_safe_risky():
     # Note that tiny changes to the code could change the values being asserted.
-    random.seed(0)
-    results = []
-    results.append(safe_risky())
-    results.append(safe_risky(optimized_learning=True))
-    results.append(safe_risky(decay=2))
-    results.append(safe_risky(temperature=1, noise=0))
-    results.append(safe_risky(risky_wins=0.6))
-    results.append(safe_risky(risky_wins=0.4))
-    assert all(isclose(r, x) for r, x in zip(results, [0.359, 0.443, 0.227, 0.25, 0.56775, 0.271]))
+    with randomseed():
+        results = []
+        results.append(safe_risky())
+        results.append(safe_risky(optimized_learning=True))
+        results.append(safe_risky(decay=2))
+        results.append(safe_risky(temperature=1, noise=0))
+        results.append(safe_risky(risky_wins=0.6))
+        results.append(safe_risky(risky_wins=0.4))
+        assert all(isclose(r, x) for r, x in zip(results, [0.359, 0.443, 0.227, 0.25, 0.56775, 0.271]))
 
 def form_choice(d):
     n = random.randrange(6)
@@ -446,49 +456,49 @@ def form_choice(d):
 
 def test_attributes():
     # Note that tiny changes to the code could change the values being asserted.
-    random.seed(0)
-    left_chosen = 0
-    illuminated_chosen = 0
-    a = Agent(attributes=["button", "illuminated"], default_utility=5)
-    left = { "button": "left" }
-    right = { "button": "right" }
-    for i in range(2000):
-        left["illuminated"] = random.random() < 0.5
-        right["illuminated"] = random.random() < 0.5
-        formed_left = form_choice(left)
-        if random.randrange(2):
-            choice = a.choose(formed_left, form_choice(right))
-        else:
-            choice = a.choose(form_choice(right), formed_left)
-        illum = False
-        if choice == formed_left:
-            is_left = True
-            if left["illuminated"]:
-                illum = True
-        else:
-            is_left = False
-            if right["illuminated"]:
-                illum = True
-        if is_left:
-            left_chosen += 1
-        if illum:
-            illuminated_chosen += 1
-        a.respond((1 if is_left else 2) * (2 if illum else 1))
-    assert left_chosen > 300 and left_chosen < 800
-    assert illuminated_chosen > 1200 and illuminated_chosen < 1800
-    a = Agent(attributes=["attribute_1", "attribute_2"], default_utility=1)
-    results = set()
-    for i in range(3):
-        results.add(tuple(a.choose({"attribute_1": 1, "attribute_2": 2},
-                                   {"attribute_1": 3},
-                                   {"attribute_2": 4})))
-        a.respond(0)
-    assert len(results) == 3
-    a = Agent(attributes=["x"], default_utility=10)
-    with pytest.raises(ValueError):
-        a.choose([["not hashable"]], [0])
-    with pytest.raises(ValueError):
-        a.choose([0], [0])
+    with randomseed():
+        left_chosen = 0
+        illuminated_chosen = 0
+        a = Agent(attributes=["button", "illuminated"], default_utility=5)
+        left = { "button": "left" }
+        right = { "button": "right" }
+        for i in range(2000):
+            left["illuminated"] = random.random() < 0.5
+            right["illuminated"] = random.random() < 0.5
+            formed_left = form_choice(left)
+            if random.randrange(2):
+                choice = a.choose(formed_left, form_choice(right))
+            else:
+                choice = a.choose(form_choice(right), formed_left)
+            illum = False
+            if choice == formed_left:
+                is_left = True
+                if left["illuminated"]:
+                    illum = True
+            else:
+                is_left = False
+                if right["illuminated"]:
+                    illum = True
+            if is_left:
+                left_chosen += 1
+            if illum:
+                illuminated_chosen += 1
+            a.respond((1 if is_left else 2) * (2 if illum else 1))
+        assert left_chosen > 300 and left_chosen < 800
+        assert illuminated_chosen > 1200 and illuminated_chosen < 1800
+        a = Agent(attributes=["attribute_1", "attribute_2"], default_utility=1)
+        results = set()
+        for i in range(3):
+            results.add(tuple(a.choose({"attribute_1": 1, "attribute_2": 2},
+                                       {"attribute_1": 3},
+                                       {"attribute_2": 4})))
+            a.respond(0)
+        assert len(results) == 3
+        a = Agent(attributes=["x"], default_utility=10)
+        with pytest.raises(ValueError):
+            a.choose([["not hashable"]], [0])
+        with pytest.raises(ValueError):
+            a.choose([0], [0])
 
 def partial_matching_agent():
     a = Agent(temperature=1, noise=0, attributes=["button", "color", "size"], mismatch_penalty=5)
@@ -592,78 +602,78 @@ def test_partial_activations():
 
 def test_insider():
     # Note that tiny changes to the code could change the value being asserted.
-    random.seed(0)
-    x = insider.run()
-    assert x == 0.7535
+    with randomseed():
+        x = insider.run()
+        assert isclose(x, 0.715)
 
 def test_delayed_feedback():
-    random.seed(0)
-    a = Agent(noise=0.1, decay=1)
-    a.populate(10, "a")
-    assert a.choose("a") == "a"
-    dra = a.respond()
-    assert not dra.is_resolved
-    assert isclose(dra.outcome, 10)
-    a.populate(20, "b")
-    assert a.choose("a", "b") == "b"
-    drb = a.respond()
-    assert not dra.is_resolved
-    assert isclose(dra.outcome, 10)
-    assert isclose(dra.expectation, 10)
-    assert not drb.is_resolved
-    assert isclose(drb.outcome, 20)
-    assert a.choose("a", "b") == "b"
-    a.respond(-10000)
-    assert a.choose("a", "b") == "a"
-    a.respond(0)
-    assert not dra.is_resolved
-    assert isclose(dra.outcome, 10)
-    assert not drb.is_resolved
-    assert isclose(drb.outcome, 20)
-    inst = a.instances(None)
-    assert len(inst) == 4
-    assert next(i for i in inst
-                if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
-                and i["occurrences"]==[0,1])
-    assert next(i for i in inst
-                if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
-                and i["occurrences"]==[1,2])
-    assert next(i for i in inst
-                if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
-                and i["occurrences"]==[3])
-    assert next(i for i in inst
-                if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
-                and i["occurrences"]==[4])
-    assert isclose(dra.update(15), 10)
-    assert dra.is_resolved
-    assert isclose(dra.outcome, 15)
-    assert isclose(dra.expectation, 10)
-    inst = a.instances(None)
-    print(inst)
-    assert len(inst) == 5
-    assert next(i for i in inst
-                if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
-                and i["occurrences"]==[0])
-    assert next(i for i in inst
-                if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
-                and i["occurrences"]==[1,2])
-    assert next(i for i in inst
-                if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
-                and i["occurrences"]==[3])
-    assert next(i for i in inst
-                if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
-                and i["occurrences"]==[4])
-    assert next(i for i in inst
-                if i["decision"]=="a" and isclose(i["outcome"],15) and i["created"]==1
-                and i["occurrences"]==[1])
-    assert not drb.is_resolved
-    assert isclose(drb.outcome, 20)
-    assert isclose(dra.update(20), 15)
-    assert dra.is_resolved
-    assert isclose(dra.outcome, 20)
-    assert isclose(dra.expectation, 10)
-    assert not drb.is_resolved
-    assert isclose(drb.outcome, 20)
+    with randomseed():
+        a = Agent(noise=0.1, decay=1)
+        a.populate(10, "a")
+        assert a.choose("a") == "a"
+        dra = a.respond()
+        assert not dra.is_resolved
+        assert isclose(dra.outcome, 10)
+        a.populate(20, "b")
+        assert a.choose("a", "b") == "b"
+        drb = a.respond()
+        assert not dra.is_resolved
+        assert isclose(dra.outcome, 10)
+        assert isclose(dra.expectation, 10)
+        assert not drb.is_resolved
+        assert isclose(drb.outcome, 20)
+        assert a.choose("a", "b") == "b"
+        a.respond(-10000)
+        assert a.choose("a", "b") == "a"
+        a.respond(0)
+        assert not dra.is_resolved
+        assert isclose(dra.outcome, 10)
+        assert not drb.is_resolved
+        assert isclose(drb.outcome, 20)
+        inst = a.instances(None)
+        assert len(inst) == 4
+        assert next(i for i in inst
+                    if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
+                    and i["occurrences"]==[0,1])
+        assert next(i for i in inst
+                    if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
+                    and i["occurrences"]==[1,2])
+        assert next(i for i in inst
+                    if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
+                    and i["occurrences"]==[3])
+        assert next(i for i in inst
+                    if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
+                    and i["occurrences"]==[4])
+        assert isclose(dra.update(15), 10)
+        assert dra.is_resolved
+        assert isclose(dra.outcome, 15)
+        assert isclose(dra.expectation, 10)
+        inst = a.instances(None)
+        print(inst)
+        assert len(inst) == 5
+        assert next(i for i in inst
+                    if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
+                    and i["occurrences"]==[0])
+        assert next(i for i in inst
+                    if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
+                    and i["occurrences"]==[1,2])
+        assert next(i for i in inst
+                    if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
+                    and i["occurrences"]==[3])
+        assert next(i for i in inst
+                    if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
+                    and i["occurrences"]==[4])
+        assert next(i for i in inst
+                    if i["decision"]=="a" and isclose(i["outcome"],15) and i["created"]==1
+                    and i["occurrences"]==[1])
+        assert not drb.is_resolved
+        assert isclose(drb.outcome, 20)
+        assert isclose(dra.update(20), 15)
+        assert dra.is_resolved
+        assert isclose(dra.outcome, 20)
+        assert isclose(dra.expectation, 10)
+        assert not drb.is_resolved
+        assert isclose(drb.outcome, 20)
 
 def test_instances(tmp_path):
     a = Agent(default_utility=15)

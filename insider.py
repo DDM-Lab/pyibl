@@ -96,7 +96,7 @@ def reset_agent(a,
                 temperature=TEMPERATURE,
                 decay=DECAY,
                 mismatch_penalty=MISMATCH_PENALTY):
-    a.reset(True)
+    a.reset()
     a.noise = noise
     a.temperature = temperature
     a.decay = decay

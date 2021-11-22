@@ -80,8 +80,9 @@ class Agent:
         elif not (isinstance(name, str) and len(name) > 0):
             raise TypeError(f"Agent name {name} is not a non-empty string")
         self._name = name
-        self._memory = pyactup.TabularMemory(learning_time_increment=0,
-                                      optimized_learning=optimized_learning)
+        self._memory = pyactup.Memory(learning_time_increment=0,
+                                      optimized_learning=optimized_learning,
+                                      blend="_utility")
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise
         self.decay = decay
@@ -136,8 +137,8 @@ class Agent:
         If *preserve_prepopulated* is false it deletes all the instances from this agent;
         if it is true it deletes all those not created at time zero. IBLT parameters such
         as :attr:`noise` and :attr:`decay` are not affected. Any prepopulated instances,
-        including those created automatically if a :attr:`defaultUtility` is provided and
-        :attr:`defaultUtilityPopulates` is true are removed, but the settings of those
+        including those created automatically if a :attr:`default_utility` is provided and
+        :attr:`default_utility_populates` is true are removed, but the settings of those
         properties are not altered.
 
         If *optimized_learning* is supplied and is ``True`` or ``False`` it sets the
@@ -153,7 +154,7 @@ class Agent:
     @property
     def time(self):
         """This agent's current time.
-        Time in PyIBL is a dimensionless quantity, typical just counting the number of
+        Time in PyIBL is a dimensionless quantity, typically just counting the number of
         choose/respond cycles that have occurred since the Memory was last :meth:`reset`.
         """
         return self._memory.time
@@ -467,7 +468,7 @@ class Agent:
         if :meth:`respond` is called with the same outcome after :meth:`choose` has
         returned the same decision in the same situation, in which case those reinforcing
         occurrences will have later timestamps. An alternative mechanism to facilitate
-        sartup of a model is setting the :attr:`defaultUtility` property of the agent.
+        sartup of a model is setting the :attr:`default_utility` property of the agent.
         While rarely done, a modeler can even combine the two mechanisms, if desired.
 
         It is also possible to call prepopulate after choose/respond cycles have occurred.
@@ -491,7 +492,7 @@ class Agent:
         """
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
-            self._memory.learn(Agent.add_utility(choice, outcome))
+            self._memory.learn(Agent._add_utility(choice, outcome))
             self._last_learn_time = max(self._last_learn_time, self._memory.time)
 
     @staticmethod
@@ -525,7 +526,7 @@ class Agent:
         return result
 
     @staticmethod
-    def add_utility(attributes, utility):
+    def _add_utility(attributes, utility):
         result = {"_utility": utility}
         result.update(attributes)
         return result
@@ -737,7 +738,7 @@ class Agent:
                             else:
                                 u = self._default_utility
                             if self._default_utility_populates:
-                                self._at_time(0, lambda: self._memory.learn(Agent.add_utility(q, u)))
+                                self._at_time(0, lambda: self._memory.learn(Agent._add_utility(q, u)))
                         else:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
@@ -859,11 +860,11 @@ class Agent:
             except ValueError:
                 raise ValueError(f"{choice} is not one of choices originally provided")
         if outcome is not None:
-            self._memory.learn(Agent.add_utility(queries[i], Agent._outcome_value(outcome)))
+            self._memory.learn(Agent._add_utility(queries[i], Agent._outcome_value(outcome)))
             self._last_learn_time = self._memory.time
             self._pending_decision = None
         else:
-            self._memory.learn(Agent.add_utility(queries[i], utilities[i]))
+            self._memory.learn(Agent._add_utility(queries[i], utilities[i]))
             self._last_learn_time = self._memory.time
             result = DelayedResponse(self, queries[i], utilities[i])
             self._pending_decision = None
@@ -1005,9 +1006,9 @@ class DelayedResponse:
         """
         outcome = Agent._outcome_value(outcome)
         old = self._outcome
-        self._agent._memory.forget(Agent.add_utility(self._attributes, self._outcome), self._time)
+        self._agent._memory.forget(Agent._add_utility(self._attributes, self._outcome), self._time)
         self._agent._at_time(self._time,
-                             lambda: self._agent._memory.learn(Agent.add_utility(self._attributes, outcome)))
+                             lambda: self._agent._memory.learn(Agent._add_utility(self._attributes, outcome)))
         self._resolved = True
         self._outcome = outcome
         return old
