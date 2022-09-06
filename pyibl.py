@@ -88,7 +88,7 @@ class Agent:
         self.decay = decay
         self.mismatch_penalty = mismatch_penalty
         self.default_utility = default_utility
-        self.default_utility_populates = True
+        self.default_utility_populates = False
         self._attribute_similarities = [None] * len(self._attributes)
         self._details = None
         self._trace = False
@@ -416,7 +416,7 @@ class Agent:
         If at that time the value is not a function of one argument, or it does not return
         a Real, an :exc:`RuntimeError` is raised.
 
-        The :attr:`default_utility_populates` property, which is ``True`` by default,
+        The :attr:`default_utility_populates` property, which is ``False`` by default,
         controls whether or not an instance is added for each interrogation of
         the attr:`default_utility` property. If an instance is added, it is added
         as by :meth:`populate_at` with a first argument of zero.

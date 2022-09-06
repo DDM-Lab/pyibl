@@ -978,7 +978,12 @@ Changes between versions 4.2 and 5.0
 ------------------------------------
 
 * The :meth:`advance` method has been added to the API.
-* Changes were made to the internal representations of instances enabling faster IBL computations in many use cases.
+* Changes were made to the internal representations of instances enabling faster IBL computations in many use cases
+  involving large numbers of instances.
+* TODO change arguments to several functions (choose, populate, what else?), and related argument signature changes
+* TODO changes to how partial matching is declared
+* TODO choose2 has been replaced by an optional argument to choose
+* The default value of :attr:`default_utility_populates` is now ``False``.
 * General tidying and minor bug fixes.
 
 
