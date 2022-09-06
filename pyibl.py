@@ -1,4 +1,4 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 """PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT).
 The principle class is Agent, an instance of which is a cognitive entity learning and
@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "4.2"
+__version__ = "4.2.0.1"
 
 PYACTUP_MINIMUM_VERSION = "1.1.2"
 
@@ -133,7 +133,7 @@ class Agent:
 
     def reset(self, preserve_prepopulated=False, optimized_learning=None):
         """Erases this agent's memory and resets its time to zero.
-        If *preserve_prepopulated* is false it delets all the instances from this agent;
+        If *preserve_prepopulated* is false it deletes all the instances from this agent;
         if it is true it deletes all those not created at time zero. IBLT parameters such
         as :attr:`noise` and :attr:`decay` are not affected. Any prepopulated instances,
         including those created automatically if a :attr:`defaultUtility` is provided and
@@ -480,7 +480,7 @@ class Agent:
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
             self._memory.learn(_utility=outcome, **choice)
-            self._last_learn_time = self._memory.time
+            self._last_learn_time = max(self._last_learn_time, self._memory.time)
 
     @staticmethod
     def _attribute_value(value, attribute):
@@ -628,7 +628,7 @@ class Agent:
         """Selects which of the *choices* is expected to result in the largest payoff, and both returns it and data used to arrive at that selection.
         While the comparison of blended values used by :meth:`choose` is the appropriate
         process for most models, for some specialized purposes the modeler may wish to
-        implement different decision procedure. This method, when combined with supplying
+        implement a different decision procedure. This method, when combined with supplying
         a second argment to :meth:`respond`, facilitates the construction of such more
         complicated models. See the description of :meth:`choose` for information on the
         arguments and so on of this method, as, apart from the second return value, it
@@ -666,6 +666,8 @@ class Agent:
         'Tilset'
         >>> data[0].blended_value
         4.167913364924516
+        >>> data[0].retrieval_probabilities[1].utility
+        1
         >>> data[0].retrieval_probabilities[1].retrieval_probability
         0.6480096261194982
         >>> data[1][0]
@@ -807,7 +809,7 @@ class Agent:
         prefer to select a different choice. For example, if using a different decision
         procedure based on the information returned by :meth:`choose2`, or if performing
         model tracing of an individual human's behavior on the experiment being modeled.
-        To suppor these unusual cases a second argument may be passed to :meth:`respond`,
+        To support these unusual cases a second argument may be passed to :meth:`respond`,
         which is the choice to actually be made. If it is not one of the choices provided
         in the original call to :meth:`choose` or :meth:`choose2` a ``ValueError`` is
         raised.

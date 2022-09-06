@@ -1,4 +1,4 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 from setuptools import setup
 import re
@@ -23,7 +23,7 @@ setup(name="pyibl",
       long_description_content_type="text/markdown",
       py_modules=["pyibl"],
       install_requires=[
-          "pyactup>=1.1.2",
+          "pyactup>=1.1.2,<1.1.4",
           "ordered_set",
           "prettytable",
           "packaging"],

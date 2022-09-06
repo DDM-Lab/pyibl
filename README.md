@@ -13,5 +13,5 @@ For further information, including the documentation and instructions for
 downloading the latest version, see the
 [online documentation](http://pyibl.ddmlab.com).
 
-PyIBL is copyright 2014-2021 by Carnegie Mellon University. It may be
+PyIBL is copyright 2014-2022 by Carnegie Mellon University. It may be
 freely used, and modified, but only for research purposes.
