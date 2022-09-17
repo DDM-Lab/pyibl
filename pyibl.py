@@ -1,4 +1,4 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 """PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT).
 The principle class is Agent, an instance of which is a cognitive entity learning and
@@ -82,6 +82,7 @@ class Agent:
         self._name = name
         self._memory = pyactup.Memory(learning_time_increment=0,
                                       optimized_learning=optimized_learning,
+                                      index=(self._attributes or ["_decision"]),
                                       blend="_utility")
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise

@@ -1,10 +1,10 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 from setuptools import setup
 import re
 
 with open("pyibl.py") as f:
-    VERSION = re.search(r"""^\s+__version__\s*=\s*['"]([0-9]+\.[0-9]+(?:\.[0-9]+)?(?:\.dev[0-9]+)?)['"]\s*$""",
+    VERSION = re.search(r"""^\s+__version__\s*=\s*['"]([0-9]+\.[0-9]+(?:\.[0-9]+)*(?:\.dev[0-9]+)?)['"]\s*$""",
                         f.read(),
                         re.MULTILINE).group(1)
 
