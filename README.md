@@ -9,9 +9,13 @@ decisions in dynamic environments.
 PyIBL requires Python version 3.7 or later. PyIBL also works in recent
 versions of PyPy.
 
-For further information, including the documentation and instructions for
-downloading the latest version, see the
+The latest released version of PyIBL may be installed from PyPi with pip:
+```
+pip install pyibl
+```
+
+For further information, including the documentation see the
 [online documentation](http://pyibl.ddmlab.com).
 
-PyIBL is copyright 2014-2021 by Carnegie Mellon University. It may be
+PyIBL is copyright 2014-2022 by Carnegie Mellon University. It may be
 freely used, and modified, but only for research purposes.

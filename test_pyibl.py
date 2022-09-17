@@ -1,4 +1,4 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 import math
 import pytest
@@ -270,6 +270,8 @@ def test_populate():
     a.populate_at(40, 22, *"uvwx")
     inst = next(i for i in a.instances(None) if i["decision"] == "y")
     assert inst["outcome"] == 30 and inst["created"] == 50
+    assert a.time == 50
+    assert a.choose(*"uvwx") in "uvwx"
     inst = next(i for i in a.instances(None) if i["outcome"] == 40)
     assert inst["decision"] in "uvwx" and inst["created"] == 22
     assert a.time == 50
@@ -396,14 +398,26 @@ def safe_risky(noise=0.25, decay=0.5, temperature=None, optimized_learning=False
 def test_safe_risky():
     # Note that tiny changes to the code could change the values being asserted.
     random.seed(0)
-    results = []
-    results.append(safe_risky())
-    results.append(safe_risky(optimized_learning=True))
-    results.append(safe_risky(decay=2))
-    results.append(safe_risky(temperature=1, noise=0))
-    results.append(safe_risky(risky_wins=0.6))
-    results.append(safe_risky(risky_wins=0.4))
-    assert all(isclose(r, x) for r, x in zip(results, [0.359, 0.443, 0.227, 0.25, 0.56775, 0.271]))
+    x = safe_risky()
+    assert isclose(x, 0.36800)
+    x = safe_risky(optimized_learning=True)
+    assert isclose(x, 0.43525)
+    x = safe_risky(decay=2)
+    assert isclose(x, 0.22425)
+    x = safe_risky(temperature=1, noise=0)
+    assert isclose(x, 0.25525)
+    x = safe_risky(risky_wins=0.6)
+    assert isclose(x, 0.54975)
+    x = safe_risky(risky_wins=0.4)
+    assert isclose(x, 0.29025)
+# +    results = []
+# +    results.append(safe_risky())
+# +    results.append(safe_risky(optimized_learning=True))
+# +    results.append(safe_risky(decay=2))
+# +    results.append(safe_risky(temperature=1, noise=0))
+# +    results.append(safe_risky(risky_wins=0.6))
+# +    results.append(safe_risky(risky_wins=0.4))
+# +    assert all(isclose(r, x) for r, x in zip(results, [0.359, 0.443, 0.227, 0.25, 0.56775, 0.271]))
 
 def form_choice(d):
     n = random.randrange(6)

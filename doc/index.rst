@@ -1,7 +1,7 @@
-.. Copyright 2014-2021 Carnegie Mellon University
+.. Copyright 2014-2022 Carnegie Mellon University
 
-PyIBL version 4.2
-*****************
+PyIBL version 4.2.0.1
+*********************
 
 .. contents::
 
@@ -36,14 +36,16 @@ Some knowledge of Python programming is essential for using it.
 Installing PyIBL
 ================
 
-The latest version of PyIBL can be downloaded from the
-`DDMLab download site <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_.
-Registration is required.
+The latest version of PyIBL can be downloaded and installed from PyPi with ``pip``:
+
+  .. parsed-literal:: pip install pyibl
+
+Use of a virtual environment for Python, such as ``venv`` or Anaconda is recommended.
 
 PyIBL requires Python version 3.7 or later. Recent versions of Mac OS X and recent Linux distributions
-are likely to have a suitable version of Python pre-installed, but it may need to be invoked as ``python3``
-instead of just ``python``, which latter often runs a 2.x version of Python instead. Use of a virtual environment,
-which is recommended, often obviates the need for the ``python3``/``python`` distinction.
+are likely to have a suitable version of Python pre-installed, but if not using a virtual environment
+it may need to be invoked as ``python3``
+instead of just ``python``, which latter often runs a 2.x version of Python instead.
 If it is not already installed, Python, for Windows, Mac OS X, Linux, or other Unices, can be
 `downloaded from python.org <http://www.python.org/download/>`_, for free.
 
@@ -66,30 +68,6 @@ One  is
 which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
-After you `download PyIBL <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_,  you will
-have a file with a name something like ``pyibl-4.2.tar.gz``. Assuming you are
-using macOS or Linux, have a sufficiently recent version of Python and
-it's corresponding ``pip`` installed, and are in the same directory as
-this file you can install PyIBL by typing at the command line
-
-  .. parsed-literal:: pip install pyibl-4.2.tar.gz
-
-Depending upon various possible variations in how Python and your machine are configured
-you may have to modify the above in various ways
-
-* you may need to ensure your virtual environment is activated
-
-* you may need use an alternative scheme your Python IDE supports
-
-* you may need to call it ``pip3`` instead of simply ``pip``
-
-* you may need to precede the call to ``pip`` by ``sudo``
-
-* you may need to use some combination of the above
-
-On Windows you may need to use some sort of Microsoft-specific incantation.
-Consult Windows Python documentation for help, and adjust the above instructions to match.
-
 Examples and this documentation
 -------------------------------
 
@@ -107,7 +85,7 @@ Users and others interested in PyIBL are encouraged to subscribe to the
 
 The PyIBL community is small enough that this serves both as an announcement list and a discussion list.
 Announcements of new versions of PyIBL will be made here, and it is a good place to ask questions about
-PyIBL or solicit other help in using it.
+PyIBL or to solicit other help in using it.
 
 It is also a good place to report any bugs, or suspected bugs, in PyIBL. If, however, you would
 prefer not to report them to this list, please feel free to instead send them to
@@ -788,13 +766,6 @@ files of many iterations of our model while it runs over thousands of
 iterations.
 
 
-Further Examples
-----------------
-
-More complex examples, many derived from real research projects, can
-be downloaded from the same site as PyIBL itself.
-
-
 Reference
 =========
 
@@ -971,6 +942,12 @@ the  blended value, *BV*, is then
 
 Changes to PyIBL
 ================
+
+Changes between versions 4.2 and  4.2.0.1
+-----------------------------------------
+
+* PyIBL is now distributed via PyPi and need no longer be downloaded from the DDMLab website.
+
 
 Changes between versions 4.1 and  4.2
 -------------------------------------

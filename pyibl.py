@@ -1,4 +1,4 @@
-# Copyright 2014-2021 Carnegie Mellon University
+# Copyright 2014-2022 Carnegie Mellon University
 
 """PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT).
 The principle class is Agent, an instance of which is a cognitive entity learning and

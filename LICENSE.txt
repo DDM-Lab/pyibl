@@ -1,4 +1,4 @@
-PyIBL is copyright 2014-2021 by Carnegie Mellon University. It may be
+PyIBL is copyright 2014-2022 by Carnegie Mellon University. It may be
 freely used, and modified, but only for research purposes.
 
 The above copyright notice shall be included in all copies or substantial
