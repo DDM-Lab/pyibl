@@ -1,7 +1,6 @@
-.. Copyright 2014-2021 Carnegie Mellon University
+.. Copyright 2014-2022 Carnegie Mellon University
 
 PyIBL version 5.0
-*****************
 
 .. contents::
 
@@ -36,14 +35,16 @@ Some knowledge of Python programming is essential for using it.
 Installing PyIBL
 ================
 
-The latest version of PyIBL can be downloaded from the
-`DDMLab download site <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_.
-Registration is required.
+The latest version of PyIBL can be downloaded and installed from PyPi with ``pip``:
+
+  .. parsed-literal:: pip install pyibl
+
+Use of a virtual environment for Python, such as ``venv`` or Anaconda is recommended.
 
 PyIBL requires Python version 3.7 or later. Recent versions of Mac OS X and recent Linux distributions
-are likely to have a suitable version of Python pre-installed, but it may need to be invoked as ``python3``
-instead of just ``python``, which latter often runs a 2.x version of Python instead. Use of a virtual environment,
-which is recommended, often obviates the need for the ``python3``/``python`` distinction.
+are likely to have a suitable version of Python pre-installed, but if not using a virtual environment
+it may need to be invoked as ``python3``
+instead of just ``python``, which latter often runs a 2.x version of Python instead.
 If it is not already installed, Python, for Windows, Mac OS X, Linux, or other Unices, can be
 `downloaded from python.org <http://www.python.org/download/>`_, for free.
 
@@ -107,7 +108,7 @@ Users and others interested in PyIBL are encouraged to subscribe to the
 
 The PyIBL community is small enough that this serves both as an announcement list and a discussion list.
 Announcements of new versions of PyIBL will be made here, and it is a good place to ask questions about
-PyIBL or solicit other help in using it.
+PyIBL or to solicit other help in using it.
 
 It is also a good place to report any bugs, or suspected bugs, in PyIBL. If, however, you would
 prefer not to report them to this list, please feel free to instead send them to
@@ -788,13 +789,6 @@ files of many iterations of our model while it runs over thousands of
 iterations.
 
 
-Further Examples
-----------------
-
-More complex examples, many derived from real research projects, can
-be downloaded from the same site as PyIBL itself.
-
-
 Reference
 =========
 
@@ -982,8 +976,14 @@ Changes between versions 4.2 and 5.0
 * General tidying and minor bug fixes.
 
 
-Changes between versions 4.1 and 4.2
-------------------------------------
+Changes between versions 4.2 and  4.2.0.1
+-----------------------------------------
+
+* PyIBL is now distributed via PyPi and need no longer be downloaded from the DDMLab website.
+
+
+Changes between versions 4.1 and  4.2
+-------------------------------------
 
 * The :meth:`choose2` method has been added to the API.
 * The :meth:`respond` method now takes a second, optional argument.
