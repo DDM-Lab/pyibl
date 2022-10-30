@@ -332,14 +332,15 @@ class Agent:
         A :exc:`ValueError` is raised if an attempt is made to set its value to anything
         other than ``None``, ``True`` or a :class:`MutableSequence`.
 
-        >>> a = Agent(default_utility=10)
-        >>> a.choose("a", "b", "c")
+        >>> from pprint import pp
+        >>> a = Agent(default_utility=10, default_utility_populates=True)
+        >>> a.choose(["a", "b", "c"])
         'c'
         >>> a.respond(5)
         >>> a.details = True
         >>> a.choose()
         'a'
-        >>> pprint(a.details, sort_dicts=False)
+        >>> pp(a.details)
         [[{'decision': 'a',
            'activations': [{'name': '0000',
                             'creation_time': 0,
@@ -403,14 +404,14 @@ class Agent:
 
         ::
 
-         >>> a = Agent(default_utility=10)
-         >>> a.choose("a", "b", "c")
+         >>> a = Agent(default_utility=10, default_utility_populates=True)
+         >>> a.choose(["a", "b", "c"])
          'a'
          >>> a.respond(5)
-         >>> a.choose("a", "b", "c")
+         >>> a.choose(["a", "b", "c"])
          'c'
          >>> a.respond(7.2)
-         >>> a.choose("a", "b", "c")
+         >>> a.choose(["a", "b", "c"])
          'b'
          >>> a.respond(2.3)
          >>> a.choose()
@@ -685,64 +686,47 @@ class Agent:
         second argment to :meth:`respond`, facilitates the construction of such more
         complicated models.
 
-        The second return value is a list of named tuples, one for each choice. These
-        named tuples have slots for the choice, the blended value, and list of
-        retrieval probability descriptions. The slots can be accessed either by index,
-        or by the names ``.choice``, ``.blended_value`` and ``retrieval_probabilities``.
-
-        The retrieval probability descriptions are themselves named tuples, one for each
-        instance consulted in constructing the given choice's blended value. Each of these
-        latter tuples has two slots, one for the utility stored in the instance and the
-        other its probability of retrieval. The slots of these tuples can be accessed by
-        index or by the names ``.utility`` and ``.retrieval_probability``.
+        The second return value is a list of dicts, one for each choice. These dicts have
+        entries for the choice, the blended value, and a list of retrieval probability
+        descriptions. The retrieval probability descriptions are themselves dicts, one for
+        each instance consulted in constructing the given choice's blended value. Each of
+        these latter dicts has two entries, one for the utility stored in the instance and
+        the other its probability of retrieval.
 
         Because of noise the results returned by :attr:`choose` are stochastic, so the
         results of running the following examples may differ in their details from those
         shown.
 
-        >>> a = Agent("Button Pusher", default_utility=10)
-        >>> a.choose("left", "right")
-        'right'
-        >>> a.respond(5)
-        >>> a.choose()
-        'left'
-        >>> a = Agent("Pet Purchaser", ["species", "state"])
-        >>> a.populate(0, ["parrot", "dead"])
-        >>> a.populate(10, ["parrot", "squawking"])
-        >>> a.choose(["parrot", "dead"], ["parrot", "squawking"])
-        ['parrot', 'squawking']
-
-        >>> a = Agent(name="Cheese Shop")
-        >>> a.populate(10, "Tilset", "Wensleydale")
-        >>> a.choose("Tilset", "Wensleydale")
-        'Tilset'
-        >>> a.respond(1)
-        >>> choice, data = a.choose2("Tilset", "Wensleydale")
-        >>> choice
-        'Wensleydale'
-        >>> data
-        [BlendingDetails(choice='Tilset', blended_value=4.167913364924516,
-                         retrieval_probabilities=[RetrievalProbability(utility=10, retrieval_probability=0.3519903738805018),
-                                                  RetrievalProbability(utility=1, retrieval_probability=0.6480096261194982)]),
-         BlendingDetails(choice='Wensleydale', blended_value=10.0,
-                         retrieval_probabilities=[RetrievalProbability(utility=10, retrieval_probability=1.0)])]
-        >>> data[0].choice
-        'Tilset'
-        >>> data[0].blended_value
-        4.167913364924516
-        >>> data[0].retrieval_probabilities[1].utility
-        1
-        >>> data[0].retrieval_probabilities[1].retrieval_probability
-        0.6480096261194982
-        >>> data[1][0]
-        'Wensleydale'
-        >>> data[1][1]
-        10.0
-        >>> data[1][2][0][0]
-        10
-        >>> data[1][2][0][1]
-        1.0
-
+    >>> from pprint import pp
+    >>> a = Agent(name="Button Pusher", default_utility=10)
+    >>> a.choose(["left", "right"])
+    'left'
+    >>> a.respond(5)
+    >>> a.choose()
+    'right'
+    >>> a = Agent(["species", "state"], "Pet Shop")
+    >>> a.populate([["parrot", "dead"]], 0)
+    >>> a.populate([["parrot", "squawking"]], 10)
+    >>> a.choose([["parrot", "dead"], ["parrot", "squawking"]])
+    ['parrot', 'squawking']
+    >>> a = Agent(name="Cheese Shop")
+    >>> a.populate(["Tilset", "Wensleydale"], 10)
+    >>> a.choose(["Tilset", "Wensleydale"])
+    'Tilset'
+    >>> a.respond(1)
+    >>> choice, data = a.choose(["Tilset", "Wensleydale"], details=True)
+    >>> choice
+    'Wensleydale'
+    >>> pp(data)
+    [{'choice': 'Wensleydale',
+      'blended_value': 10.0,
+      'retrieval_probabilities': [{'utility': 10, 'retrieval_probability': 1.0}]},
+     {'choice': 'Tilset',
+      'blended_value': 2.1449539686120187,
+      'retrieval_probabilities': [{'utility': 10,
+                                   'retrieval_probability': 0.12721710762355765},
+                                  {'utility': 1,
+                                   'retrieval_probability': 0.8727828923764424}]}]
         """
         if self._pending_decision:
             raise RuntimeError("choice requested before previous outcome was supplied")
@@ -780,8 +764,8 @@ class Agent:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
                     if details:
-                        ret_probs.append([Agent.RetrievalProbability(Agent._extract_instance_utility(inst),
-                                                                     inst["retrieval_probability"])
+                        ret_probs.append([{"utility": Agent._extract_instance_utility(inst),
+                                           "retrieval_probability": inst["retrieval_probability"]}
                                           for inst in self._memory.activation_history])
                     if det is not None:
                         d = dict(q) if self.attributes else {"decision": q["_decision"]}
@@ -815,15 +799,14 @@ class Agent:
         best = random.choice(best_indecies)
         self._pending_decision = (best, choices, queries, utilities)
         if details:
-            return choices[best], list(map(Agent.BlendingDetails, choices, utilities, ret_probs))
+            return choices[best], sorted(({"choice": c,
+                                           "blended_value": bv,
+                                           "retrieval_probabilities": rp}
+                                         for c, bv, rp in zip(choices, utilities, ret_probs)),
+                                         key=lambda x: x.get("blended_value"),
+                                         reverse=True)
         else:
             return choices[best]
-
-    RetrievalProbability = namedtuple("RetrievalProbability",
-                                      ["utility", "retrieval_probability"])
-
-    BlendingDetails = namedtuple("BlendingDetails",
-                                 ["choice", "blended_value", "retrieval_probabilities"])
 
     def _extract_instance_utility(inst):
         first_attr = inst["attributes"][0]
@@ -1090,17 +1073,17 @@ class DelayedResponse:
         Because of noise the results returned by :attr:`choose` are stochastic the results
         of running the following examples will differ in their details from those shown.
 
-        >>> a = Agent(default_utility=10)
-        >>> a.choose("a", "b")
+        >>> a = Agent(default_utility=10, default_utility_populates)
+        >>> a.choose(["a", "b"])
         'b'
         >>> a.respond(2)
-        >>> a.choose("a", "b")
+        >>> a.choose()
         'a'
         >>> a.respond(3)
-        >>> a.choose("a", "b")
+        >>> a.choose()
         'a'
         >>> r = a.respond()
-        >>> a.choose("a", "b")
+        >>> a.choose()
         'a'
         >>> a.respond(7)
         >>> a.instances()

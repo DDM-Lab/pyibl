@@ -275,18 +275,19 @@ def test_choose_simple():
     assert choice == "B"
     assert len(details) == 2
     bd = details[0]
-    assert bd.choice == "A" and isclose(bd.blended_value, 4.142135623730951)
-    p = bd.retrieval_probabilities
-    assert len(p) == 2
-    assert p[0].utility == 10
-    assert isclose(p[0].retrieval_probability, 0.4142135623730951)
-    assert p[0].utility == 10 and isclose(p[0].retrieval_probability, 0.4142135623730951)
-    assert p[1].utility == 0 and isclose(p[1].retrieval_probability, 0.585786437626905)
-    bd = details[1]
-    assert bd[0] == "B" and isclose(bd[1], 5.0)
-    p = bd[2]
+    assert bd["choice"] == "B" and isclose(bd["blended_value"], 5.0)
+    p = bd["retrieval_probabilities"]
     assert len(p) == 1
-    assert p[0][0] == 5 and isclose(p[0][1], 1.0)
+    assert p[0]["utility"] == 5
+    assert isclose(p[0]["retrieval_probability"], 1.0)
+    bd = details[1]
+    assert bd["choice"] == "A" and isclose(bd["blended_value"], 4.142135623730951)
+    p = bd["retrieval_probabilities"]
+    assert len(p) == 2
+    assert p[0]["utility"] == 10
+    assert isclose(p[0]["retrieval_probability"], 0.4142135623730951)
+    assert p[0]["utility"] == 10 and isclose(p[0]["retrieval_probability"], 0.4142135623730951)
+    assert p[1]["utility"] == 0 and isclose(p[1]["retrieval_probability"], 0.585786437626905)
 
 def test_respond():
     a = Agent(temperature=1, noise=0)
@@ -935,8 +936,8 @@ def test_fixed_noise():
     a.respond(0)
     def run_one(same):
         c, d = a.choose(details=True)
-        d = {bd.choice if isinstance(bd.choice, int) else bd.choice[0]:
-             set(rp.retrieval_probability for rp in bd.retrieval_probabilities) for bd in d}
+        d = {bd["choice"] if isinstance(bd["choice"], int) else bd["choice"][0]:
+             set(rp["retrieval_probability"] for rp in bd["retrieval_probabilities"]) for bd in d}
         a.respond(0)
         if same:
             assert d[1] == d[2]
