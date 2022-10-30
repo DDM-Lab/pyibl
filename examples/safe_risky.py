@@ -47,10 +47,10 @@ DEFAULT_UTILITY = 30
 def run(rounds, participants, risky_wins=0.5):
     risky_chosen = [0] * rounds
     a = pyibl.Agent(default_utility=DEFAULT_UTILITY, noise=NOISE, decay=DECAY)
-    for p in tqdm(range(participants)):
+    for _ in tqdm(range(participants)):
         a.reset()
         for r in range(rounds):
-            c = a.choose("safe", "risky")
+            c = a.choose(["safe", "risky"])
             if c == "safe":
                 a.respond(0)
             else:

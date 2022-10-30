@@ -60,7 +60,7 @@ def iterated_choice(*, agent, trials, high, prob, low, safe):
     riskyChosen = 0
     agent.reset()
     for trial in range(trials):
-        choice = agent.choose('risky', 'safe')
+        choice = agent.choose(['risky', 'safe'])
         if choice == 'safe':
             agent.respond(safe)
         else:
