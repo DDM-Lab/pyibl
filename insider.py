@@ -103,11 +103,11 @@ def reset_agent(a,
     a.mismatch_penalty = mismatch_penalty
 
 def run():
-    selection_agent = pyibl.Agent("Selection Agent", ["payment", "penalty", "monitored_probability"])
-    attack_agent = pyibl.Agent("Attack Agent", ["attack", "warning"])
+    selection_agent = pyibl.Agent(["payment", "penalty", "monitored_probability"], "Selection Agent")
+    attack_agent = pyibl.Agent(["attack", "warning"], "Attack Agent")
     attacks = 0
-    pyibl.similarity(lambda x, y: 1 - abs(x - y) / 10, "payment", "penalty")
-    pyibl.similarity(lambda x, y: 1 - abs(x -y), "monitored_probability")
+    selection_agent.similarity(["payment", "penalty"], lambda x, y: 1 - abs(x - y) / 10)
+    selection_agent.similarity(["monitored_probability"], lambda x, y: 1 - abs(x -y))
     for p in range(PARTICIPANTS):
         total = 0
         reset_agent(selection_agent)
@@ -117,19 +117,19 @@ def run():
             n = random.randrange(TARGET_COUNT)
             x = TARGETS[1][n]
             covered = n + 1 in TRAINING_COVERAGE[i]
-            selection_agent.populate(x["penalty" if covered else "payment"], x)
-            attack_agent.populate(x["penalty" if covered else "payment"],
-                                     { "attack": True, "warning": n + 1 in TRAINING_SIGNALS[i] })
-        attack_agent.populate(0, { "attack": False, "warning": False })
-        attack_agent.populate(0, { "attack": False, "warning": True })
-        attack_agent.populate(10, { "attack": True, "warning": False })
-        attack_agent.populate(5, { "attack": True, "warning": True })
+            selection_agent.populate([x], x["penalty" if covered else "payment"])
+            attack_agent.populate([{ "attack": True, "warning": n + 1 in TRAINING_SIGNALS[i] }],
+                                  x["penalty" if covered else "payment"])
+        attack_agent.populate([{ "attack": False, "warning": False }], 0)
+        attack_agent.populate([{ "attack": False, "warning": True }], 0)
+        attack_agent.populate([{ "attack": True, "warning": False }], 10)
+        attack_agent.populate([{ "attack": True, "warning": True }], 5)
         for b in range(BLOCKS):
             for t in range(TRIALS):
-                selected = TARGETS[b].index(selection_agent.choose(*TARGETS[b]))
+                selected = TARGETS[b].index(selection_agent.choose(TARGETS[b]))
                 warned = selected + 1 in SIGNALS[b][t]
-                attack = attack_agent.choose({ "attack": True, "warning": warned },
-                                             { "attack": False, "warning": warned })["attack"]
+                attack = attack_agent.choose([{ "attack": True, "warning": warned },
+                                              { "attack": False, "warning": warned }])["attack"]
                 covered = selected + 1 in COVERAGE[b][t]
                 if not attack:
                     payoff = 0

@@ -1,5 +1,10 @@
 *.pyc
 _*
 *.egg-info
+MANIFEST
 dist
+build
+.venv-activation-script
+.pyibl
+old-*
 

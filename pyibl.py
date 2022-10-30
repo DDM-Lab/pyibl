@@ -1,9 +1,9 @@
 # Copyright 2014-2022 Carnegie Mellon University
 
-"""PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT).
-The principle class is Agent, an instance of which is a cognitive entity learning and
+"""PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT). The
+principle class is :class:`Agent`, an instance of which is a cognitive entity learning and
 making decisions based on its experience from prior decisions, primarily by calls to its
-:meth:`Agent.choose` and :meth:`Agent.respond` methods. The decisions an agent is choosing
+:meth:`choose` and :meth:`respond` methods. The decisions an agent is choosing
 between can be further decorated with information about their current state. There are
 facilities for inspecting details of the IBL decision making process programmatically
 facilitating debugging, logging and fine grained control of complex models.
@@ -15,6 +15,8 @@ PYACTUP_MINIMUM_VERSION = "2.0.dev1"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
+
+from pprint import pp
 
 import collections.abc as abc
 import csv
@@ -30,9 +32,8 @@ import warnings
 from collections import namedtuple
 from itertools import count
 from keyword import iskeyword
-from ordered_set import OrderedSet
+from numbers import Real
 from packaging import version
-from pprint import pprint
 from prettytable import PrettyTable
 from warnings import warn
 
@@ -44,6 +45,9 @@ warnings.formatwarning = (lambda message, category, filename, lineno, line=None:
 if version.parse(pyactup.__version__) < version.parse(PYACTUP_MINIMUM_VERSION):
     warn(f"PyACTUp version {pyactup.__version__} is older than that required by this version of PyIBL")
 
+__all__ = ["Agent", "DelayedResponse",
+           "positive_linear_similarity", "positive_quadratic_similarity",
+           "bounded_linear_similarity", "bounded_quadratic_similarity"]
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -54,60 +58,52 @@ class Agent:
 
     An :class:`Agent` also has zero or more *attributes*, named by strings. The attribute
     names can be retrieved with the :attr:`attributes` property, and also cannot be
-    changed after an agent is created. Attribute names must be formed from letters, digits
-    and underscore, must begin with a letter, and may not be Python keywords.
+    changed after an agent is created. Attribute names must be non-empty strings. The
+    value of *attributes*, if present, should be a list of strings. As a convenience if
+    none of the attribute names contain spaces or commas a string consisting of the
+    names, separated by commas or spaces (but not both) may be used instead of a list.
 
     The agent properties :attr:`noise`, :attr:`decay`, :attr:`temperature`,
-    :attr:`mismatch_penalty`, :attr:`optimized_learning` and :attr:`default_utility` can
-    be initialized when creating an Agent.
+    :attr:`mismatch_penalty`, :attr:`optimized_learning`, :attr:`default_utility`,
+    :attr:`default_utility_populates` and :attr:`fixed_noise` can be initialized when
+    creating an Agent.
+
     """
 
     _agent_number = 0
 
     def __init__(self,
-                 name=None,
                  attributes=[],
+                 name=None,
                  noise=pyactup.DEFAULT_NOISE,
                  decay=pyactup.DEFAULT_DECAY,
                  temperature=None,
                  mismatch_penalty=None,
                  optimized_learning=False,
-                 default_utility=None):
-        self._attributes = Agent._ensure_attribute_names(list(attributes))
+                 default_utility=None,
+                 default_utility_populates=False,
+                 fixed_noise=False):
+        self._attributes = pyactup.Memory._ensure_slot_names(attributes)
         if name is None:
             Agent._agent_number += 1
             name = f"agent-{Agent._agent_number}"
         elif not (isinstance(name, str) and len(name) > 0):
             raise TypeError(f"Agent name {name} is not a non-empty string")
         self._name = name
-        self._memory = pyactup.Memory(learning_time_increment=0,
-                                      optimized_learning=optimized_learning,
-                                      index=(self._attributes or ["_decision"]),
-                                      blend="_utility")
+        self._memory = pyactup.Memory(optimized_learning=optimized_learning,
+                                      threshold=None,
+                                      index=(self._attributes or ["_decision"]))
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise
         self.decay = decay
         self.mismatch_penalty = mismatch_penalty
         self.default_utility = default_utility
-        self.default_utility_populates = False
-        self._attribute_similarities = [None] * len(self._attributes)
+        self.default_utility_populates = default_utility_populates
         self._details = None
         self._trace = False
+        self._fixed_noise = fixed_noise
         self.reset()
         self._test_default_utility()
-
-    @staticmethod
-    def _ensure_attribute_names(attributes):
-        result = OrderedSet()
-        for a in attributes:
-            if not (isinstance(a, str) and
-                    re.fullmatch(r"\w(?<![\d_])\w*", a) and
-                    not iskeyword(a)):
-                raise ValueError(f"'{a}' cannot be used as an attribute name")
-            if a in result:
-                raise ValueError(f"duplicate attribute {a}")
-            result.add(a)
-        return result
 
     def __repr__(self):
         return f"<Agent {str(self)} {id(self)}>"
@@ -125,29 +121,28 @@ class Agent:
 
     @property
     def attributes(self):
-        """A tuple of the names of the attributes included in all situations associated with decisions this agent will be asked to make.
+        """A list  of the names of the attributes included in all situations associated with decisions this agent will be asked to make.
         These names are assigned when the agent is created and cannot be
         changed, and are strings. The order of them in the returned
-        tuple is the same as that in which they were given when the
+        list is the same as that in which they were given when the
         agent was created.
         """
-        return tuple(self._attributes)
+        return list(self._attributes)
 
-    def reset(self, preserve_prepopulated=False, optimized_learning=None):
+    def _preferred_index(self):
+        return [a for a in self.attributes if not self._memory._similarities.get(a)]
+
+    def reset(self, preserve_prepopulated=False):
         """Erases this agent's memory and resets its time to zero.
-        If *preserve_prepopulated* is false it deletes all the instances from this agent;
-        if it is true it deletes all those not created at time zero. IBLT parameters such
-        as :attr:`noise` and :attr:`decay` are not affected. Any prepopulated instances,
-        including those created automatically if a :attr:`default_utility` is provided and
-        :attr:`default_utility_populates` is true are removed, but the settings of those
-        properties are not altered.
-
-        If *optimized_learning* is supplied and is ``True`` or ``False`` it sets the
-        value of :attr:`optimized_learning` for this :class:`Agent`. If it is not supplied
-        or is ``None`` the current value of :attr:`optimized_learning` is not changed.
+        If *preserve_prepopulated* is ``False`` it deletes all the instances from this
+        agent; if it is ``True`` it deletes all those not created at time zero. IBLT
+        parameters such as :attr:`noise` and :attr:`decay` are not affected. If ``False``
+        any prepopulated instances, including those created automatically if a
+        :attr:`default_utility` is provided and :attr:`default_utility_populates` is
+        ``True`` are removed, but the settings of those properties are not altered.
         """
         self._memory.reset(preserve_prepopulated=preserve_prepopulated,
-                           optimized_learning=optimized_learning)
+                           index=self._preferred_index())
         self._last_learn_time = 0
         self._previous_choices = None
         self._pending_decision = None
@@ -160,42 +155,83 @@ class Agent:
         """
         return self._memory.time
 
-    def advance(self, increment=1):
+    def advance(self, increment=1, target=None):
         """Advances the time of this agent by *increment* time steps.
         The *increment*, which defaults to ``1``, should be a non-negative integer; if it
-        is not a :exc:`ValueError` is raised. Returns the updated :attr:`time`."""
-        try:
-            n = int(increment)
-        except:
-            n = None
-        if n is None or n != increment or n < 0:
-            raise ValueError(f"The increment, {increment}, is not a non-negative integer")
-        return self._memory.advance(n)
+        is not a :exc:`ValueError` is raised.
+
+        If *target* is provided instead of *increment*, it should be the future time to
+        which to advance. If both *target* and *increment* are supplied the time is set
+        to the later of *target* and the current time advanced by *increment*.
+
+        Returns the updated :attr:`time`.
+
+        A :exc:`ValueError` is raised if it is in the past or is not a non-negative
+        integer.
+        """
+        def ensure_num(n, name):
+            try:
+                result = int(n)
+            except:
+                result = None
+            if result is None or result != n or result < 0:
+                raise ValueError(f"The {name}, {n}, is not a non-negative integer")
+            return result
+        t = self.time
+        if increment is not None:
+            t = self.time + ensure_num(increment, "increment")
+        if target is not None:
+            n = ensure_num(target, "target")
+            if n < self.time:
+                raise ValueError(f"The target time, {target}, is earlier than the "
+                                 f"current time, {self.time}")
+            t = max(n, t)
+        self._memory.time = t
+        return self.time
 
     @property
     def noise(self):
-        """The amount of noise to add during instance activation computation.
-        This is typically a positive, possibly floating point, number between about 0.1 and 1.5.
-        It defaults to 0.25.
-        If explicitly zero, no noise is added during activation computation.
-        If set to ``None`` it reverts the value to its default, 0.25.
-        If an explicit :attr:`temperature` is not set, the value of noise is also used
-        to compute a default temperature for the blending operation on result utilities.
-        Attempting to set :attr:`noise` to a negative number raises a :exc:`ValueError`.
+        """The amount of noise to add during instance activation computation. This is typically a
+        positive, possibly floating point, number between about ``0.2`` and ``0.8``. It
+        defaults to ``0.25``. If explicitly zero, no noise is added during activation
+        computation. Setting :attr:`noise` to ``None`` or ``False`` is equivalent to
+        setting it to zero.
+
+        If an explicit :attr:`temperature` is not set, the value of :attr:`noise` is also
+        used to compute a default temperature for the blending operation on result
+        utilities.
+
+        Attempting to set :attr:`noise` to a negative number raises a
+        :exc:`ValueError`.
+
         """
         return self._memory.noise
 
     @noise.setter
     def noise(self, value):
-        if value is None or value is False:
-            value = pyactup.DEFAULT_NOISE
         if value != getattr(self._memory, "noise", None):
-            self._memory.noise = float(value)
+            self._memory.noise = float(value) if value is not None else 0.0
+
+    @property
+    def fixed_noise(self):
+        """ Whether or not to constrain activation noise to remain constant at any one time.
+        In some complicated models it may be necessary to compute the activation of an
+        instance more than once at the same time step. Normally in this case each such
+        computation generates its own, independent value of the activation noise. For
+        some esoteric purposes it may be preferred to use the same activation noise for
+        these different perspectives of an instance's activation, which can be achieved by
+        setting this property to ``True``. By default :attr:`fixed_noise` is ``False``.
+        """
+        return self._fixed_noise
+
+    @fixed_noise.setter
+    def fixed_noise(self, value):
+        self._fixed_noise = bool(value)
 
     @property
     def temperature(self):
         """The temperature parameter used for blending values.
-        If ``None``, the default, the square root of 2 times the value of
+        If ``None``, the default, the square root of ``2`` times the value of
         :attr:`noise` will be used. If the temperature is too close to zero, which
         can also happen if it is ``None`` and the :attr:`noise` is too low, or negative, a
         :exc:`ValueError` is raised.
@@ -209,51 +245,75 @@ class Agent:
     @property
     def decay(self):
         """Controls the rate at which activation for previously experienced instances in memory decay with the passage of time.
-        Time in this sense is dimensionless, and simply the number of choose/respond cycles that have occurred since the
-        agent was created or last :meth:`reset`.
-        The :attr:`decay` is typically between about 0.1 to about 10.
-        The default value is 0.5. If zero memory does not decay.
-        If set to ``None`` it reverts the value to its default, 0.5.
-        Attempting to set it to a negative number raises a :exc:`ValueError`.
-        It must be less one 1 if this agent's :attr:`optimized_learning` parameter is set.
+        Time in this sense is dimensionless, and simply the number of choose/respond
+        cycles that have occurred since the agent was created or last :meth:`reset`. The
+        :attr:`decay` is typically between about ``0.1`` to about ``2.0``. The default
+        value is ``0.5``. If zero memory does not decay. Setting :attr:`decay` to ``None``
+        or ``False`` is equivalent to setting it to zero. The :attr:`decay` must be less
+        than ``1`` if this :class:`Agent` is using :attr:`optimized_learning`. Attempting
+        to set :attr:`decay` to a negative number raises a :exc:`ValueError`.
         """
         return self._memory.decay
 
     @decay.setter
     def decay(self, value):
-        if value is None or value is False:
-            value = pyactup.DEFAULT_DECAY
         if value != getattr(self._memory, "decay", None):
-            self._memory.decay = float(value)
+            self._memory.decay = float(value) if value is not None else 0.0
 
     @property
     def mismatch_penalty(self):
         """The mismatch penalty applied to partially matching values when computing activations.
-        If ``None`` no partial matching is done.
-        Otherwise any defined similarity functions (see :func:`similarity`) are called as necessary, and
-        the resulting values are multiplied by the mismatch penalty and subtracted
-        from the activation. For any attributes and decisions for which similarity
-        functions are not defined only instances matching exactly on these attributes or
-        decisions are considered.
+        If ``None`` no partial matching is done. Otherwise any defined similarity
+        functions (see :func:`similarity`) are called as necessary, and the resulting
+        values are multiplied by the mismatch penalty and subtracted from the activation.
+        For any attributes and decisions for which similarity functions are not defined
+        only instances matching exactly on these attributes or decisions are considered.
 
-        Attempting to set this parameter to a value other than ``None`` or a real number
-        raises a :exc:`ValueError`.
+        Attempting to set this parameter to a value other than ``None`` or a non-negative
+        real number raises a :exc:`ValueError`.
+
         """
         return self._memory.mismatch
 
     @mismatch_penalty.setter
     def mismatch_penalty(self, value):
+        v = value
         if value is False:
-            value = None
-        self._memory.mismatch = value
+            v = None
+        if v is not None and (not isinstance(v, Real) or v < 0):
+            raise ValueError(f"The mismatch_penalty, {value}, is neither a non-negative "
+                             f"real number nor None")
+        self._memory.mismatch = v
         self._test_default_utility()
 
     @property
     def optimized_learning(self):
         """Whether or not this :class:"`Agent` uses the optimized_learning approximation when computing instance activations.
-        This can only be changed for an :class:`Agent` by calling :meth:`reset`.
+        If ``False``, the default, optimized learning is not used. If ``True`` is is used
+        for all cases. If a positive integer, that number of the most recent rehearsals of
+        an instance are used exactly, with any older rehearsals having their contributions
+        to the activation approximated.
+
+        Optimized learning can only be used if the :attr:`decay` is less than one.
+        Attempting to set this parameter to ``True`` or an integer when :attr:`decay` is
+        one or greater raises a :exc:`ValueError`.
+
+        The value of this attribute can only be changed when the :class:`Agent` does not
+        contain any instances, typically immediately after it is created or :meth:`reset`.
+        Otherwise a :exc:`RuntimeError` is raised.
+
+        .. warning::
+            Care should be taken when adjusting the :attr:`time` manually and using
+            optimized learning as operations that depend upon activation may no longer
+            raise an exception if they are called when ``advance`` has not been called
+            after an instance has been created or reinforced, producing biologically
+            implausible results.
         """
         return self._memory.optimized_learning
+
+    @optimized_learning.setter
+    def optimized_learning(self, value):
+        self._memory.optimized_learning = value
 
     @property
     def details(self):
@@ -419,13 +479,13 @@ class Agent:
 
         The :attr:`default_utility_populates` property, which is ``False`` by default,
         controls whether or not an instance is added for each interrogation of
-        the attr:`default_utility` property. If an instance is added, it is added
-        as by :meth:`populate_at` with a first argument of zero.
+        the :attr:`default_utility` property. If an instance is added, it is added
+        as by :meth:`populate` at the current time.
 
         Setting :attr:`default_utility` to ``None`` or ``False`` (the initial default)
         causes no default utility to be used. In this case, if :meth:`choose` is called
-        for a decision in a situation for which there is no instance available, an
-        :exc:`RuntimeError` will be raised.
+        for a decision in a situation for which there is no instance available, a
+        :exc:`RuntimeError` is raised.
         """
         return self._default_utility
 
@@ -439,8 +499,9 @@ class Agent:
 
     def _test_default_utility(self):
         try:
-            if self._default_utility and self._memory.mismatch:
-                warn("Setting both a default_utility when partial matching is in use is usually ill-advised")
+            if self._default_utility is not None and self._memory.mismatch is not None:
+                warn("Setting a default_utility and using partial matching "
+                     "simultaneously is usually ill-advised")
         except AttributeError:
             # We were called before self was completely initialized.
             pass
@@ -456,12 +517,14 @@ class Agent:
     def default_utility_populates(self, value):
         self._default_utility_populates = bool(value)
 
-    def populate(self, outcome, *choices):
+    def populate(self, choices, outcome, when=None):
         """Adds instances to memory, one for each of the *choices*, with the given outcome, at the current time, without advancing that time.
         The *outcome* should be a :class:`Real` number.
         The *choices* are as described in :meth:`choose`.
-        Time is a dimensionless quantity, simply a count of the number of choose/respond
-        cycles that have occurred since the agent was created or last :meth:`reset`.
+        If provided, *when* should be a time, a dimensionless quantity, typically a count
+        of the number of choose/respond cycles that have occurred since the agent was
+        created or last :meth:`reset`; providing *time* will cause the instances to be
+        added at that specified time instead of the current time.
 
         This is typically used to enable startup of a model by adding instances before the
         first call to :meth:`choose`. When used in this way the timestamp associated with
@@ -472,25 +535,33 @@ class Agent:
         sartup of a model is setting the :attr:`default_utility` property of the agent.
         While rarely done, a modeler can even combine the two mechanisms, if desired.
 
-        It is also possible to call prepopulate after choose/respond cycles have occurred.
-        In this case the instances are added with the current time as the timestamp. This
-        is one less than the timestamp that would be used were an instance to be added by
-        being experienced as part of a choose/respond cycle instead. Each agent keeps
-        internally a clock, the number of choose/respond cycles that have occurred since
-        it was created or last :meth:`reset`. When :meth:`choose` is called it advances
-        that clock by one *before* computing the activations of the existing instances, as
-        it must since the activation computation depends upon all experiences having been in
-        the past. That advanced clock is the timestamp used when an instance is added or
-        reinforced by :meth:`respond`. See also :meth:`populate_at`.
+        It is also possible to call :meth:`populate` after choose/respond cycles have
+        occurred. In this case the instances are added with the current time as the
+        timestamp. This is one less than the timestamp that would be used were an instance
+        to be added by being experienced as part of a choose/respond cycle instead. Each
+        agent keeps internally a clock, the number of choose/respond cycles that have
+        occurred since it was created or last :meth:`reset`. When :meth:`choose` is called
+        it advances that clock by one *before* computing the activations of the existing
+        instances, as it must since the activation computation depends upon all
+        experiences having been in the past. That advanced clock is the timestamp used
+        when an instance is added or reinforced by :meth:`respond`.
+
+        The *when* argument, which if provided should be a time, can be used to add
+        instances at other times.
+
+        Raises a :exc:`ValueError` if *outcome* is not a :class:`Real` number, or if any
+        of the *choices* are malformed or duplicates.
 
         .. warning::
             In normal use you should only call :meth:`populate` before any choose/respond
             cycles. If, for exotic purposes, you do wish to call it after, caution should
-            be exercised to avoid biologically implausible models.
-
-        Raises a :exc:`ValueError` if *outcome* is not a :class:`Real` number, or if any
-        of the *choices* are malformed or duplicates.
+            be exercised to avoid biologically implausible models. It should not normally
+            be necessary to use the *when* argument, which is provided only for esoteric
+            uses. In particular adding instances in the future will usually result in
+            tears as operations such as :meth:`choose" will raise an :exc:`Exception`.
         """
+        if when is not None:
+            return self._at_time(when, lambda: self.populate(choices, outcome))
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
             self._memory.learn(Agent._add_utility(choice, outcome))
@@ -536,7 +607,7 @@ class Agent:
     def _outcome_value(value):
         if not isinstance(value, numbers.Real):
             raise ValueError(
-                f"outcome {outcome} does not have a (non-complex) numeric value")
+                f"outcome {value} does not have a (non-complex) numeric value")
         return value
 
     def _at_time(self, when, callback):
@@ -551,27 +622,7 @@ class Agent:
         finally:
             self._memory._time = saved
 
-    def populate_at(self, outcome, when, *choices):
-        """Adds instances to memory, one for each of the *choices*, with the given outcome, at the stipulated time.
-        The *outcome* should be a :class:`Real` number.
-        The *choices* are as described in :meth:`choose`.
-        The time at which the instances are added is given by *when*, an integer denoting
-        the time, a dimensionless quantity advanced by one for each
-        :meth:`choose`/:meth:`respond` cycle.
-
-        .. warning::
-            In normal use :meth:`populate_at` should not be needed. If, for exotic
-            purposes, you do wish to use it, caution should be exercised to avoid
-            biologically implausible models.
-
-        Raises a :exc:`ValueError` if *outcome* is not a number; if *when* is not an
-        integer, or is greater than the current time; or if any of the *choices* are
-        malformed or duplicates.
-
-        """
-        self._at_time(when, lambda: self.populate(outcome, *choices))
-
-    def choose(self, *choices):
+    def choose(self, choices=None, details=False):
         """Selects which of the *choices* is expected to result in the largest payoff, and returns it.
         The expected form of the *choices* depends upon whether or not this :class:`Agent`
         has any attributes or not. If it does not, each of the *choices* should be a
@@ -579,29 +630,29 @@ class Agent:
         the *choices* are not hashable or are ``None`` a :exc:`ValueError` is raised.
 
         If this :class:`Agent` does have attributes (that is, the *attributes* argument
-        was supplied and non-empty when it was created, or, equivalently, the
-        :meth:`attributes` method returns a non-empty tuple), then each of the *choices*
-        can be either a :class:`Mapping`, typically a :class:`dict`, mapping attribute
-        names to their values, or a :class:`Sequence`, typically a :class:`list` or
-        :class:`tuple`, containing attribute values in the order they were declared when
-        this :class:`Agent` was created and would be returned by calling
-        :meth:`attributes`. Attributes not present (either there is no key in the
-        :class:`Mapping`, or a :class:`Sequence` shorter than the number of attributes)
-        have a value of `None`, while values not corresponding to attributes of the
-        :class:`Agent` (either a key in the :class:`Mapping` that does not match an
-        attribute name, or a :class:`Sequence` longer than the number of attributes) are
-        ignored. Whether a :class:`Mapping` or a :class:`Sequence`, all the attribute
-        values must be :class:`Hashable`, and are typically strings or numbers. If any of
-        the *choices* do not have one of these forms a :exc:`ValueError` is raised.
+        was supplied and non-empty when it was created, or, equivalently, the value of the
+        :attr:`attributes` property is a non-empty list), then each of the *choices* can
+        be either a :class:`Mapping`, typically a :class:`dict`, mapping attribute names
+        to their values, or a :class:`Sequence`, typically a :class:`list`, containing
+        attribute values in the order they were declared when this :class:`Agent` was
+        created and would be returned by :attr:`attributes`. Attributes not present
+        (either there is no key in the :class:`Mapping`, or a :class:`Sequence` shorter
+        than the number of attributes) have a value of `None`, while values not
+        corresponding to attributes of the :class:`Agent` (either a key in the
+        :class:`Mapping` that does not match an attribute name, or a :class:`Sequence`
+        longer than the number of attributes) are ignored. Whether a :class:`Mapping` or a
+        :class:`Sequence`, all the attribute values must be :class:`Hashable`, and are
+        typically strings or numbers. If any of the *choices* do not have one of these
+        forms a :exc:`ValueError` is raised.
 
         In either case, if any pair of the *choices* duplicate each other, even if of
         different forms (e.g. dictionary versus list), and after adding default ``None``
         values and removing ignored values, a :exc:`ValueError` is raised.
 
         It is also possible to supply no *choices*, in which case those used in the most
-        recent previous call to this method or :meth:`choose2` are reused. If there was no
-        such previous call since the last time this :class:`Agent` was :meth:`reset` a
-        :exc:`ValueError` is raised.
+        recent previous call to this method are reused. If there was no such previous call
+        since the last time this :class:`Agent` was :meth:`reset` a :exc:`ValueError` is
+        raised.
 
         For each of the *choices* this method finds all instances in memory that match,
         and computes their activations at the current time based upon when in the past
@@ -626,33 +677,13 @@ class Agent:
         :meth:`respond` before calling :meth:`choose` again, or a :exc:`RuntimeError` will
         be raised.
 
-        Because of noise the results returned by :attr:`choose` are stochastic the results
-        of running the following examples may differ in their details from those shown.
-
-        >>> a = Agent("Button Pusher", default_utility=10)
-        >>> a.choose("left", "right")
-        'right'
-        >>> a.respond(5)
-        >>> a.choose()
-        'left'
-        >>> a = Agent("Pet Purchaser", ["species", "state"])
-        >>> a.populate(0, ["parrot", "dead"])
-        >>> a.populate(10, ["parrot", "squawking"])
-        >>> a.choose(["parrot", "dead"], ["parrot", "squawking"])
-        ['parrot', 'squawking']
-
-        """
-        return self._choose(choices, False)
-
-    def choose2(self, *choices):
-        """Selects which of the *choices* is expected to result in the largest payoff, and both returns it and data used to arrive at that selection.
-        While the comparison of blended values used by :meth:`choose` is the appropriate
-        process for most models, for some specialized purposes the modeler may wish to
-        implement a different decision procedure. This method, when combined with supplying
-        a second argment to :meth:`respond`, facilitates the construction of such more
-        complicated models. See the description of :meth:`choose` for information on the
-        arguments and so on of this method, as, apart from the second return value, it
-        behaves just like :meth:`choose`.
+        If the *details* argument is also supplied and is ``True`` a second value is also
+        returned, containing data used to arrive at the selection. While the comparison of
+        blended values used by :meth:`choose` is the appropriate process for most models,
+        for some specialized purposes the modeler may wish to implement a different
+        decision procedure. This additional information, when combined with supplying a
+        second argment to :meth:`respond`, facilitates the construction of such more
+        complicated models.
 
         The second return value is a list of named tuples, one for each choice. These
         named tuples have slots for the choice, the blended value, and list of
@@ -665,8 +696,21 @@ class Agent:
         other its probability of retrieval. The slots of these tuples can be accessed by
         index or by the names ``.utility`` and ``.retrieval_probability``.
 
-        See the following example which may help clarify this rather complicated
-        description.
+        Because of noise the results returned by :attr:`choose` are stochastic, so the
+        results of running the following examples may differ in their details from those
+        shown.
+
+        >>> a = Agent("Button Pusher", default_utility=10)
+        >>> a.choose("left", "right")
+        'right'
+        >>> a.respond(5)
+        >>> a.choose()
+        'left'
+        >>> a = Agent("Pet Purchaser", ["species", "state"])
+        >>> a.populate(0, ["parrot", "dead"])
+        >>> a.populate(10, ["parrot", "squawking"])
+        >>> a.choose(["parrot", "dead"], ["parrot", "squawking"])
+        ['parrot', 'squawking']
 
         >>> a = Agent(name="Cheese Shop")
         >>> a.populate(10, "Tilset", "Wensleydale")
@@ -698,19 +742,11 @@ class Agent:
         10
         >>> data[1][2][0][1]
         1.0
+
         """
-        return self._choose(choices, True)
-
-    RetrievalProbability = namedtuple("RetrievalProbability",
-                                      ["utility", "retrieval_probability"])
-
-    BlendingDetails = namedtuple("BlendingDetails",
-                                 ["choice", "blended_value", "retrieval_probabilities"])
-
-    def _choose(self, choices, include_retrieval_probabilities):
         if self._pending_decision:
             raise RuntimeError("choice requested before previous outcome was supplied")
-        choices = list(choices)
+        choices = list(choices if choices is not None else [])
         if not choices:
             if self._previous_choices:
                 choices = self._previous_choices
@@ -718,9 +754,9 @@ class Agent:
                 raise ValueError("no choices were supplied and no default ones are available")
         queries = self._make_queries(choices)
         self._previous_choices = choices
-        details = [] if self._details is not None else None
+        det = [] if self._details is not None else None
         try:
-            if include_retrieval_probabilities or details is not None or self._trace:
+            if details or det is not None or self._trace:
                 history = []
                 self._memory.activation_history = history
             else:
@@ -729,7 +765,7 @@ class Agent:
                 self._memory.advance(self._last_learn_time - self._memory.time + 1)
             utilities = []
             ret_probs = []
-            with self._memory.fixed_noise:
+            def do_choose(history):
                 for c, q in zip(choices, queries):
                     u = self._memory.blend("_utility", q)
                     if u is None:
@@ -743,24 +779,29 @@ class Agent:
                         else:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
-                    if include_retrieval_probabilities:
+                    if details:
                         ret_probs.append([Agent.RetrievalProbability(Agent._extract_instance_utility(inst),
                                                                      inst["retrieval_probability"])
                                           for inst in self._memory.activation_history])
-                    if details is not None:
+                    if det is not None:
                         d = dict(q) if self.attributes else {"decision": q["_decision"]}
                         d["activations"] = history
                         d["blended"] = u
-                        details.append(d)
+                        det.append(d)
                     if history is not None:
                         if self._trace:
                             self._print_trace(q, u, history)
                         history = []
                         self._memory.activation_history = history
+            if (not self._fixed_noise):
+                do_choose(history)
+            else:
+                with self._memory.fixed_noise:
+                    do_choose(history)
         finally:
             self._memory.activation_history = None
         if self._details is not None:
-            self._details.append(details)
+            self._details.append(det)
         if self._trace:
             print(f"\n   {'='*140}")
         best_indecies = [0]
@@ -773,10 +814,16 @@ class Agent:
                 best_indecies.append(i)
         best = random.choice(best_indecies)
         self._pending_decision = (best, choices, queries, utilities)
-        if include_retrieval_probabilities:
+        if details:
             return choices[best], list(map(Agent.BlendingDetails, choices, utilities, ret_probs))
         else:
             return choices[best]
+
+    RetrievalProbability = namedtuple("RetrievalProbability",
+                                      ["utility", "retrieval_probability"])
+
+    BlendingDetails = namedtuple("BlendingDetails",
+                                 ["choice", "blended_value", "retrieval_probabilities"])
 
     def _extract_instance_utility(inst):
         first_attr = inst["attributes"][0]
@@ -808,7 +855,7 @@ class Agent:
             row.append(h["creation_time"])
             row.append(h["references"] if self._memory.optimized_learning else list(h["references"]))
             row.append(attrs["_utility"])
-            row.append(h["base_activation"])
+            row.append(h["base_level_activation"])
             row.append(h["activation_noise"])
             if self._memory.mismatch:
                 row.append(h["mismatch"])
@@ -818,21 +865,21 @@ class Agent:
         print(tab, flush=True)
 
     def respond(self, outcome=None, choice=None):
-        """Provide the *outcome* resulting from the most recent decision selected by :meth:`choose` (or :meth:`choose2`)
+        """Provide the *outcome* resulting from the most recent decision selected by :meth:`choose`.
         The *outcome* should be a real number, where larger numbers are considered "better."
         This results in the creation or reinforcemnt of an instance in memory for the
         decision with the given outcome, and is the fundamental way in which the PyIBL
         model "learns from experience."
 
-        By default the choice selected by :meth:`choose` (or :meth:`choose2`) is the one
-        to which the outcome is attached. In unusual cases, however, the modeler may
-        prefer to select a different choice. For example, if using a different decision
-        procedure based on the information returned by :meth:`choose2`, or if performing
-        model tracing of an individual human's behavior on the experiment being modeled.
-        To support these unusual cases a second argument may be passed to :meth:`respond`,
-        which is the choice to actually be made. If it is not one of the choices provided
-        in the original call to :meth:`choose` or :meth:`choose2` a ``ValueError`` is
-        raised.
+        By default the choice selected by :meth:`choose` is the one to which the outcome
+        is attached. In unusual cases, however, the modeler may prefer to select a
+        different choice; for example, if using a different decision procedure based on
+        the information returned by a ``True`` value of the second argument to
+        :meth:`Choose`, or if performing model tracing of an individual human's behavior
+        on the experiment being modeled. To support these unusual cases a second argument
+        may be passed to :meth:`respond`, which is the choice to actually be made. If it
+        is not one of the choices provided in the original call to :meth:`choose a
+        ``ValueError`` is raised.
 
         It is also possible to delay feedback, by calling :meth:`respond` without
         arguments, or with the first argument being ``None``. This tells the
@@ -870,6 +917,25 @@ class Agent:
             result = DelayedResponse(self, queries[i], utilities[i])
             self._pending_decision = None
             return result
+
+    def discrete_blend(self, outcome_attribute, conditions):
+        """Returns the most likely to be retrieved, existing value of *outcome_attribute* subject to the *conditions*.
+        That is, the existing value from the instances in this :class:`Agent` such that
+        the likelihood one of those instances will be retrieved weighted by their
+        probabilities of retrieval. The *outcome_attribute* should an attribute name in
+        this :class:`Agent`. The *conditions* should be a ``Mapping`` mapping attribute
+        names to values, like the various choices provided to :meth:`choose`. Also returns
+        a second value, a dictionary mapping possible values of *outcome_attribute* to
+        their probabilities of retrieval.
+
+        This method can be useful for building specialized models using schemes that do
+        not correspond to the paradigm exposed by the usual ``choose``/``respond`` cycles.
+        """
+        pyactup.Memory._ensure_slot_name(outcome_attribute)
+        conditions = self._make_queries([conditions])[0]
+        if outcome_attribute in conditions:
+            del conditions[outcome_attribute]
+        return self._memory.discrete_blend(outcome_attribute, conditions)
 
     def instances(self, file=sys.stdout, pretty=True):
         """Prints or returns all the instances currently stored in this :class:`Agent`.
@@ -917,6 +983,63 @@ class Agent:
             for d in data:
                 w.writerow(d)
 
+    def similarity(self, attributes=None, function=None, weight=None):
+        """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
+        The *attributes* are names of attributes of the :class:`Agent`. The value of
+        *attributes*, if present, should be a list of strings. As a convenience if none of
+        the attribute namess contain spaces or commas a string consisting of the names,
+        separated by commas or spaces (but not both) may be used instead of a list. For an
+        :class:`Agent` that has no attributes the *attributes* argument should be empty or
+        omitted.
+
+        The *function* argument should be a ``Callable``, taking two arguments, or
+        ``True``. The similarity value returned should be a real number between zero and
+        one, inclusive. If ``True`` is passed as the value of *function* a default
+        similarity function is used which returns one if its two arguments are ``==`` and
+        zero otherwise. If, when called, the function returns a number outside that range
+        a :exc:`RuntimeError` is raised. If, when the similarity function is called, the
+        return value is not a real number a :exc:`ValueError` is raised.
+
+        The *weight* should be a positive, real number, and defaults to one.
+
+        Similarity functions are only called when the `Agent` has a
+        :attr:`mismatch_penalty` specified. When a similarity function is called it is
+        passed two arguments, attribute values to compare. The function should be
+        commutative; that is, if called with the same arguments in the reverse order, it
+        should return the same value. It should also be stateless, always returning the
+        same values if passed the same arguments. If either of these constraints is
+        violated no error is raised, but the results will, in most cases, be meaningless.
+
+        If one of *function* or *weight* is omitted but the other is supplied, the
+        supplied item is set with the omitted one unchanged. If called with neither
+        *function* nor *weight* the similarity function is removed.
+
+        In the following examples the height and width are assumed to range from zero to
+        ten, and similarity of either is computed linearly, as the difference between them
+        normalized by the maximum length of ten. The colors pink and red are considered
+        50% similar, and all other color pairs are similar only if identical, with the
+        similarity weighted half as much as the usual default.
+
+        >>> a.similarity(["height", "width"], lambda v1, v2: 1 - abs(v1 - v2) / 10)
+        >>> def color_similarity(c1, c2):
+        ...     if c1 == c2:
+        ...         return 1
+        ...     elif c1 in ("red", "pink") and c2 in ("red", "pink"):
+        ...         return 0.5
+        ...     else:
+        ...         return 0
+        ...
+        >>> a.similarity("color", color_similarity, 0.5)
+        """
+        self._memory.similarity((pyactup.Memory._ensure_slot_names(attributes)
+                                 or [ "_decision" ]),
+                                function,
+                                weight)
+        try:
+            self._memory.index = self._preferred_index()
+        except RuntimeError:
+            pass
+
 
 class DelayedResponse:
     """A representation of an intermediate state of the computation of a decision, as returned from :meth:`respond` called with no arguments.
@@ -952,7 +1075,7 @@ class DelayedResponse:
         return self._outcome
 
     def update(self, outcome):
-        """Replaces current reward learned, either expected or ground truth, by a new ground truth value.
+        """Replaces the current reward learned, either expected or ground truth, by a new ground truth value.
 
         The *outcome* is a real number. Typically this value replaces that learned when
         :meth:`respond` was called, though it
@@ -1014,56 +1137,6 @@ class DelayedResponse:
         self._outcome = outcome
         return old
 
-
-def similarity(function, *attributes):
-    """Add a function to compute the similarity of attribute values that are not equal.
-    The *attributes* are names of attributes of any :class:`Agent`. If called with no
-    *attributes* the *function* will be applied to the choices of any :class:`Agent` that
-    has no attributes. If *attributes* contains names not acceptable as attribute names
-    a :exc:`ValueError` is raised.
-
-    The similarity value returned should be a real number between zero and one,
-    inclusive. If, when called, the function returns a number outside that range a
-    warning will be printed and the value will be modified to be zero (if negative) or
-    one (if greater than one). If, when the similarity function is called, the return
-    value is not a real number a :exc:`ValueError` is raised.
-
-    Similarity functions are only called when the `Agent` has a :attr:`mismatch_penalty`
-    specified.
-    When a similarity function is called it is passed two arguments, attribute
-    values to compare.
-    The function should be commutative; that is, if called with the same arguments
-    in the reverse order, it should return the same value.
-    It should also be stateless, always returning the same values if passed
-    the same arguments.
-    If either of these constraints is violated no error is raised, but the results
-    will, in most cases, be meaningless.
-
-    if ``True`` is passed as the value of *function* a default similarity function is
-    is used which returns one if its two arguments are ``==`` and zero otherwise.
-
-    If ``None`` is passed as the value of *function* the similarity
-    function(s) for the specified attributes are cleared.
-
-    In the following examples the height and width are assumed to range from zero to
-    ten, and similarity of either is computed linearly, as the difference between
-    them normalized by the maximum length of ten. The colors pink and red are considered
-    50% similar, and all other color pairs are similar only if identical.
-
-    >>> similarity(lambda v1, v2: 1 - abs((v1 - v2) / 10), "height", "width")
-    >>> def color_similarity(c1, c2):
-    ...     if c1 == c2:
-    ...         return 1
-    ...     elif c1 in ("red", "pink") and c2 in ("red", "pink"):
-    ...         return 0.5
-    ...     else:
-    ...         return 0
-    ...
-    >>> similarity(color_similarity, "color")
-    """
-    pyactup.set_similarity_function(function or None,
-                                    (Agent._ensure_attribute_names(attributes)
-                                     or [ "_decision" ]))
 
 def positive_linear_similarity(x, y):
     """Returns a similarity value of two positive :class:`Real` numbers, scaled linearly by the larger of them.

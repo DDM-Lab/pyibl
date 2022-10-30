@@ -1,18 +1,12 @@
 # Copyright 2014-2022 Carnegie Mellon University
 
 from setuptools import setup
-import re
+from pyibl import __version__
 
-with open("pyibl.py") as f:
-    VERSION = re.search(r"""^\s+__version__\s*=\s*['"]([0-9]+\.[0-9]+(?:\.[0-9]+)*(?:\.dev[0-9]+)?)['"]\s*$""",
-                        f.read(),
-                        re.MULTILINE).group(1)
-
-with open("README.md") as f:
-    DESCRIPTION = f.read()
+DESCRIPTION = open("README.md").read()
 
 setup(name="pyibl",
-      version=VERSION,
+      version=__version__
       description="A Python implementation of a subset of Instance Based Learning Theory",
       license="Free for research purposes",
       author="Dynamic Decision Making Laboratory of Carnegie Mellon University",
@@ -28,12 +22,13 @@ setup(name="pyibl",
           "prettytable",
           "packaging"],
       tests_require=["pytest"],
-      python_requires=">=3.7",
+      python_requires=">=3.8",
       classifiers=["Intended Audience :: Science/Research",
                    "License :: OSI Approved :: MIT License",
                    "Programming Language :: Python",
                    "Programming Language :: Python :: 3 :: Only",
-                   "Programming Language :: Python :: 3.7",
                    "Programming Language :: Python :: 3.8",
                    "Programming Language :: Python :: 3.9",
+                   "Programming Language :: Python :: 3.10",
+                   "Programming Language :: Python :: 3.11",
                    "Operating System :: OS Independent"])

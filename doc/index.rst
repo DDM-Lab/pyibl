@@ -41,13 +41,7 @@ The latest version of PyIBL can be downloaded and installed from PyPi with ``pip
 
 Use of a virtual environment for Python, such as ``venv`` or Anaconda is recommended.
 
-PyIBL requires Python version 3.7 or later. Recent versions of Mac OS X and recent Linux distributions
-are likely to have a suitable version of Python pre-installed, but if not using a virtual environment
-it may need to be invoked as ``python3``
-instead of just ``python``, which latter often runs a 2.x version of Python instead.
-If it is not already installed, Python, for Windows, Mac OS X, Linux, or other Unices, can be
-`downloaded from python.org <http://www.python.org/download/>`_, for free.
-
+PyIBL requires Python version 3.8 or later.
 PyIBL also works in recent versions of `PyPy <https://pypy.org/>`_, an alternative implementation to the usual CPython.
 PyPy uses a just-in-time (JIT) compiler, which is a good match for PyIBL, and PyIBL models often
 run faster in PyPy compared to CPython.
@@ -55,7 +49,7 @@ run faster in PyPy compared to CPython.
 Note that PyIBL is simply a Python module, a library, that is run as part of a larger
 Python program. To build and run models using PyIBL you do need to do
 some Python programming. If you're new to Python, a good place to
-start learning it is `The Python Tutorial <https://docs.python.org/3.7/tutorial/>`_.
+start learning it is `The Python Tutorial <https://docs.python.org/3.8/tutorial/>`_.
 To write and run a Python program you need to create and edit Python
 source files, and then run them. If you are comfortable using the command
 line, you can simply create and edit the files in your favorite text editor,
@@ -63,48 +57,17 @@ and run them from the command line. Many folks, though, are happier using
 a graphical Integrated Development Environment (IDE).
 `Many Python IDEs are available <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_.
 One  is
-`IDLE <https://docs.python.org/3.7/library/idle.html>`_,
+`IDLE <https://docs.python.org/3.8/library/idle.html>`_,
 which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
-After you `download PyIBL <http://download.ddmlab.com/cgi-bin/download?package=pyibl>`_,  you will
-have a file with a name something like ``pyibl-5.0.tar.gz``. Assuming you are
-using macOS or Linux, have a sufficiently recent version of Python and
-it's corresponding ``pip`` installed, and are in the same directory as
-this file you can install PyIBL by typing at the command line
-
-  .. parsed-literal:: pip install pyibl-5.0.tar.gz
-
-Depending upon various possible variations in how Python and your machine are configured
-you may have to modify the above in various ways
-
-* you may need to ensure your virtual environment is activated
-
-* you may need use an alternative scheme your Python IDE supports
-
-* you may need to call it ``pip3`` instead of simply ``pip``
-
-* you may need to precede the call to ``pip`` by ``sudo``
-
-* you may need to use some combination of the above
-
-On Windows you may need to use some sort of Microsoft-specific incantation.
-Consult Windows Python documentation for help, and adjust the above instructions to match.
-
-Examples and this documentation
--------------------------------
-
-In addition to PyIBL itself, the download site also makes available
-
-* a selection of example models using PyIBL
-
-* and this document, as a directory of files. After downloading the directory point a browser at the file ``index.html`` within it.
+This document is also available at `http://pyibl.ddmlab.com/ <http://pyibl.ddmlab.com/>`_.
 
 Mailing list and reporting bugs
 -------------------------------
 
 Users and others interested in PyIBL are encouraged to subscribe to the
-`PyIBL mailing list <https://lists.andrew.cmu.edu/mailman/listinfo/pyibl-users>`_.
+`PyIBL Users mailing list <https://lists.andrew.cmu.edu/mailman/listinfo/pyibl-users>`_.
 
 The PyIBL community is small enough that this serves both as an announcement list and a discussion list.
 Announcements of new versions of PyIBL will be made here, and it is a good place to ask questions about
@@ -123,7 +86,11 @@ Likely the easiest way to get started with PyIBL is by looking at some examples 
 While much of what is in this chapter should be understandable even without much knowledge of Python, to
 write your own models you'll need to know how to write Python code.
 If you are new to Python, a good place to start may be
-the `Python Tutorial <https://docs.python.org/3.7/tutorial/>`_.
+the `Python Tutorial <https://docs.python.org/3.8/tutorial/>`_.
+
+Note that when running the examples below yourself the results may differ in detail because
+IBL models are stochastic.
+
 
 A first example of using PyIBL
 ------------------------------
@@ -139,7 +106,7 @@ In the code blocks that follow, lines the user has typed begin with any of the t
 Other lines are printed by Python or some other command.
 
 First we launch Python, and make PyIBL available to it. While the output here was
-captured in a Linux distribution and virtual environment in which you launch Python version 3.7 by typing ``python``,
+captured in a Linux distribution and virtual environment in which you launch Python version 3.8 by typing ``python``,
 your installation my differ and you may launch it with ``python3``, ``py``, or something else
 entirely; or start an interactive session in a completely different way using a
 graphical IDE.
@@ -147,16 +114,16 @@ graphical IDE.
 .. code-block::
 
     $ python
-    Python 3.9.0 | packaged by conda-forge | (default, Oct 14 2020, 22:59:50) 
+    Python 3.9.0 | packaged by conda-forge | (default, Oct 14 2020, 22:59:50)
     [GCC 7.5.0] on linux
     Type "help", "copyright", "credits" or "license" for more information.
-    >>> import pyibl
+    >>> from pyibl import Agent
 
 Next we create an :class:`Agent`, named ``'My Agent'``.
 
 .. code-block:: python
 
-    >>> a = pyibl.Agent("My Agent")
+    >>> a = Agent(name="My Agent")
     >>> a
     <Agent My Agent 140441174486264>
 
@@ -175,7 +142,7 @@ obvious in cases like this where there is no reason yet to prefer one answer to 
 
 .. code-block:: python
 
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
 
 Now return a response to the model. We'll supply 1.0.
@@ -190,7 +157,7 @@ probability to pick the other button.
 
 .. code-block:: python
 
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Red Button'
 
 We'll give it an even lower utility than we did the first one.
@@ -204,22 +171,22 @@ Again, your results may differ in detail because of randomness.
 
 .. code-block:: python
 
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
     >>> a.respond(1.0)
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Red Button'
     >>> a.respond(-2.0)
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
     >>> a.respond(1.0)
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
     >>> a.respond(1.0)
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
     >>> a.respond(1.0)
-    >>> a.choose("The Green Button", "The Red Button")
+    >>> a.choose(["The Green Button", "The Red Button"])
     'The Green Button'
     >>> a.respond(1.0)
 
@@ -230,7 +197,7 @@ this choice, and automates the reply.
 .. code-block:: python
 
     >>> def choose_and_respond():
-    ...     result = a.choose("The Green Button", "The Red Button")
+    ...     result = a.choose(["The Green Button", "The Red Button"])
     ...     if result == "The Green Button":
     ...         a.respond(1.0)
     ...     else:
@@ -248,7 +215,7 @@ we run it, we'll call :meth:`reset` to clear the agent's memory.
 
     >>> a.reset()
     >>> results = { "The Green Button" : 0, "The Red Button" : 0 }
-    >>> for i in range(1000):
+    >>> for _ in range(1000):
     ...     results[choose_and_respond()] += 1
     ...
     >>> results
@@ -269,23 +236,26 @@ color or colors give the highest rewards.
 .. code-block:: python
 
     >>> def choose_and_respond(choices):
-    ...     result = a.choose(*choices)
-    ...     a.respond(choices[result])
+    ...     result = a.choose(choices)
+    ...     a.respond(responses[result])
     ...     return result
     ...
     >>> a.reset()
-    >>> choices = { "green": -5, "blue": 0, "yellow": -4,
-    ...             "red": -6, "violet": 0 }
+    >>> responses = { "green": -5, "blue": 0, "yellow": -4,
+    ...               "red": -6, "violet": 0 }
     ...
+    >>> choices = list(responses.keys())
+    >>> choices
+    ['green', 'blue', 'yellow', 'red', 'violet']
     >>> results = { k: 0 for k in choices }
     >>> results
     {'green': 0, 'blue': 0, 'yellow': 0, 'red': 0, 'violet': 0}
-    >>> for i in range(5):
+    >>> for _ in range(5):
     ...     results[choose_and_respond(choices)] += 1
     ...
     >>> results
     {'green': 1, 'blue': 1, 'yellow': 1, 'red': 1, 'violet': 1}
-    >>> for i in range(995):
+    >>> for _ in range(995):
     ...     results[choose_and_respond(choices)] += 1
     ...
     >>> results
@@ -309,10 +279,10 @@ they will do worse.
 .. code-block:: python
 
     >>> from pyibl import Agent
-    >>> agents = [ Agent(name, default_utility=20)
-    ...            for name in "ABCDEFGHIJ" ]
+    >>> agents = [ Agent(name=n, default_utility=20)
+    ...            for n in "ABCDEFGHIJ" ]
     >>> def play_round():
-    ...     choices = [ a.choose('safe', 'risky') for a in agents ]
+    ...     choices = [ a.choose(['safe', 'risky']) for a in agents ]
     ...     risky = [ a for a, c in zip(agents, choices) if c == 'risky' ]
     ...     reward = 7 / len(risky)
     ...     for a in agents:
@@ -326,7 +296,7 @@ Here's what running it for ten rounds looks like.
 
 .. code-block:: python
 
-    >>> for i in range(10):
+    >>> for _ in range(10):
     ...     print(play_round())
     ...
     (1.4, 'BDFHI')
@@ -362,7 +332,7 @@ places, and we don't need that kind of precision.
     ...     by_round = []
     ...     by_agent = [0]*len(agents)
     ...     agent_payoffs = [0]*len(agents)
-    ...     for r in range(rounds):
+    ...     for _ in range(rounds):
     ...         payoff, chose_risky = play_round()
     ...         by_round.append(len(chose_risky))
     ...         for a, i in zip(agents, count()):
@@ -439,7 +409,7 @@ We'll start by creating an agent, and two choices, one for each button.
 
     >>> from pyibl import Agent
     >>> from random import random
-    >>> a = Agent("My Agent", ["button", "illuminated"], default_utility=5)
+    >>> a = Agent(["button", "illuminated"], default_utility=5)
     >>> left = { "button": "left", "illuminated": False }
     >>> right = { "button": "right", "illuminated": False }
 
@@ -449,17 +419,17 @@ that actually runs the experiment will turn one of them on, randomly.
 .. code-block:: python
 
     >>> def push_button():
-    ... if random() <= 0.5:
-    ...     left["illuminated"] = True
-    ... else:
-    ...     left["illuminated"] = False
-    ... right["illuminated"] = not left["illuminated"]
-    ... result = a.choose(left, right)
-    ... reward = 1 if result["button"] == "left" else 2
-    ... if result["illuminated"]:
-    ...     reward *= 2
-    ... a.respond(reward)
-    ... return result
+    ...     if random() <= 0.5:
+    ...         left["illuminated"] = True
+    ...     else:
+    ...         left["illuminated"] = False
+    ...     right["illuminated"] = not left["illuminated"]
+    ...     result = a.choose([left, right])
+    ...     reward = 1 if result["button"] == "left" else 2
+    ...     if result["illuminated"]:
+    ...         reward *= 2
+    ...     a.respond(reward)
+    ...     return result
     ...
     >>> push_button()
     {'button': 'right', 'illuminated': True}
@@ -471,7 +441,7 @@ is picked, and how many times an illuminated button is picked.
 
     >>> a.reset()
     >>> results = {'left': 0, 'right': 0, True: 0, False: 0}
-    >>> for i in range(2000):
+    >>> for _ in range(2000):
     ...     result = push_button()
     ...     results[result["button"]] += 1
     ...     results[result["illuminated"]] += 1
@@ -494,7 +464,7 @@ ones being considered for the current choice. But often we want to
 choose the option that most closely matches, though not necessarily
 exactly, for some definition of "closely." To do this we define a
 similarity function for those attributes we want to partially match,
-and specify a ``mismatch_penalty parameter``.
+and specify a ``mismatch_penalty`` parameter.
 
 In this example there will be a continuous function, ``f()``, that maps
 a number between zero and one to a reward value. At each round the model
@@ -507,7 +477,8 @@ by defining an agent that expects choices to have a single attribute, ``n``.
     >>> from pyibl import Agent, similarity
     >>> from random import random
     >>> import math
-    >>> a = Agent("My Agent", ["n"])
+    >>> import sys
+    >>> a = Agent(["n"])
 
 We'll define a similarity function for that attribute, a function of two variables, two different values
 of the attribute to be compared. When the attribute
@@ -519,7 +490,7 @@ to 1 when they are equal. So, for example, 0.31 and 0.32 have a large similarity
 
 .. code-block:: python
 
-    >>> similarity(lambda x, y: 1 - abs(x - y), "n")
+    >>> a.similarity(["n"], lambda x, y: 1 - abs(x - y))
 
 The :attr:`mismatch_penalty` is a non-negative number that says how much to
 penalize past experiences for poor matches to the options currently
@@ -542,13 +513,13 @@ make sure it is displayed nicely.
     >>> def run_model(trials, mismatch, f):
     ...     a.reset()
     ...     a.mismatch_penalty = mismatch
-    ...     a.populate(f(0), {"n": 0})
+    ...     a.populate([{"n": 0}], f(0))
     ...     number_correct = 0
     ...     fraction_correct = []
     ...     for t in range(trials):
-    ...         options = [ {"n": random()} for i in range(5) ]
-    ...         choice = a.choose(*options)
-    ...         best = -float_info.max
+    ...         options = [ {"n": random()} for _ in range(5) ]
+    ...         choice = a.choose(options)
+    ...         best = -sys.float_info.max
     ...         best_choice = None
     ...         for o in options:
     ...             v = f(o["n"])
@@ -635,14 +606,14 @@ going on inside PyIBL. Several tools are provided to facilitate this.
 The :meth:`instances` method show's all instances currently in an agent's memory.
 
 Consider this simple, binary choice model, that selects between a safe choice,
-always return 1, and a risky choice which returns 2 fifty percent of the time,
+always returning 1, and a risky choice which returns 2 fifty percent of the time,
 and 0 otherwise.
 
 .. code-block:: python
 
     >>> a = Agent(default_utility=20)
     >>> def run_once():
-    ...     if a.choose("safe", "risky") == "safe":
+    ...     if a.choose(["safe", "risky"]) == "safe":
     ...         a.respond(1)
     ...     elif random() <= 0.5:
     ...         a.respond(2)
@@ -662,8 +633,8 @@ are stochastic.
     +----------+---------+---------+-------------+
     | decision | outcome | created | occurrences |
     +----------+---------+---------+-------------+
-    |   safe   |    20   |    1    |     [1]     |
-    |  risky   |    20   |    1    |     [1]     |
+    |   safe   |    20   |    0    |     [0]     |
+    |  risky   |    20   |    0    |     [0]     |
     |  risky   |    2    |    1    |     [1]     |
     +----------+---------+---------+-------------+
 
@@ -671,19 +642,19 @@ Let's run it ten more times and look again.
 
 .. code-block:: python
 
-    >>> for i in range(10):
+    >>> for _ in range(10):
     ...     run_once()
     ...
     >>> a.instances()
-    +----------+---------+---------+-----------------+
-    | decision | outcome | created |   occurrences   |
-    +----------+---------+---------+-----------------+
-    |   safe   |    20   |    1    |       [1]       |
-    |  risky   |    20   |    1    |       [1]       |
-    |  risky   |    2    |    1    |    [1, 8, 10]   |
-    |   safe   |    1    |    2    | [2, 4, 6, 7, 9] |
-    |  risky   |    0    |    3    |    [3, 5, 11]   |
-    +----------+---------+---------+-----------------+
+    +----------+---------+---------+------------------+
+    | decision | outcome | created |   occurrences    |
+    +----------+---------+---------+------------------+
+    |   safe   |    20   |    0    |       [0]        |
+    |  risky   |    20   |    0    |       [0]        |
+    |  risky   |    0    |    1    |    [1, 8, 10]    |
+    |   safe   |    1    |    2    | [2, 5, 7, 9, 11] |
+    |  risky   |    2    |    3    |    [3, 4, 6]     |
+    +----------+---------+---------+------------------+
 
 There are now five different instances, but all the actually
 experienced ones have been reinforced two or more times.
@@ -696,29 +667,29 @@ iteration we can turn on tracing in the agent.
     >>> a.trace = True
     >>> run_once()
 
-    safe → 2.0721374593470263
-    +-------+----------+---------+-----------------+---------+---------------------+---------------------+---------------------+-----------------------+
-    |   id  | decision | created |   occurrences   | outcome |   base activation   |   activation noise  |   total activation  | retrieval probability |
-    +-------+----------+---------+-----------------+---------+---------------------+---------------------+---------------------+-----------------------+
-    | 11827 |   safe   |    1    |       [1]       |    20   | -1.1989476363991853 |  0.5503100777725171 | -0.6486375586266683 |   0.056428287334054   |
-    | 11830 |   safe   |    2    | [2, 4, 6, 7, 9] |    1    |  0.7431714932183402 | -0.3959545844998943 |  0.3472169087184459 |   0.943571712665946   |
-    +-------+----------+---------+-----------------+---------+---------------------+---------------------+---------------------+-----------------------+
+    safe → 1.6981119704016256
+    +------+----------+---------+------------------+---------+---------------------+----------------------+---------------------+-----------------------+
+    |  id  | decision | created |   occurrences    | outcome |   base activation   |   activation noise   |   total activation  | retrieval probability |
+    +------+----------+---------+------------------+---------+---------------------+----------------------+---------------------+-----------------------+
+    | 0132 |   safe   |    0    |       [0]        |    20   | -1.2424533248940002 |  0.6743933445745868  | -0.5680599803194134 |  0.036742735284296085 |
+    | 0135 |   safe   |    2    | [2, 5, 7, 9, 11] |    1    |  1.0001744608971734 | -0.41339471775300435 |  0.586779743144169  |   0.9632572647157039  |
+    +------+----------+---------+------------------+---------+---------------------+----------------------+---------------------+-----------------------+
 
-    risky → 0.2690180165652046
-    +-------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
-    |   id  | decision | created | occurrences | outcome |   base activation   |   activation noise  |   total activation  | retrieval probability |
-    +-------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
-    | 11828 |  risky   |    1    |     [1]     |    20   | -1.1989476363991853 |  0.0500297186755688 | -1.1489179177236166 | 0.0020239554902251673 |
-    | 11829 |  risky   |    1    |  [1, 8, 10] |    2    |  0.4111940833223344 | -0.1340524465713021 |  0.2771416367510323 |  0.11426945338035062  |
-    | 11831 |  risky   |    3    |  [3, 5, 11] |    0    |  0.5372520337343577 |  0.4631063313501445 |  1.0003583650845023 |   0.8837065911294242  |
-    +-------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
+    risky → 0.23150913644216178
+    +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
+    |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise   |   total activation  | retrieval probability |
+    +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
+    | 0133 |  risky   |    0    |     [0]     |    20   | -1.2424533248940002 | -0.2948777661505001  | -1.5373310910445004 | 0.0009256525969768487 |
+    | 0134 |  risky   |    1    |  [1, 8, 10] |    0    |  0.4111940833223344 | 0.48087038114494485  |  0.8920644644672793 |   0.8925763051517108  |
+    | 0136 |  risky   |    3    |  [3, 4, 6]  |    2    | 0.09087765648075839 | 0.049537460190590174 | 0.14041511667134857 |   0.1064980422513124  |
+    +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
 
 From this we see PyIBL computing blended values for the two options,
-safe and risky, of 2.072 and 0.269, respectively. For the former, it
+safe and risky, of 1.6981 and 0.2315, respectively. For the former, it
 computed the activation of two relevant chunks, resulting in retrieval
 probabilities it used to combine the possible outcomes of 20 and 1,
 though heavily discounting the former because it's activation is so
-long, because of decay. Similarly for the risky choice, though with
+low, because of decay. Similarly for the risky choice, though with
 three instances reflecting three outcomes in the agent's memory.
 
 To gain programmatic access to this data we can use the :attr:`details` of an agent.
@@ -726,63 +697,60 @@ Here we run the model one more time and print the result details.
 
 .. code-block:: python
 
-    >>> from pprint import pprint
+    >>> from pprint import pp
     >>> a.trace = False
     >>> a.details = True
     >>> run_once()
-    >>> pprint(a.details)
-    [[OrderedDict([('decision', 'safe'),
-                   ('activations',
-                    [OrderedDict([('name', '11827'),
-                                  ('creation_time', 1),
-                                  ('attributes',
-                                   (('_utility', 20), ('_decision', 'safe'))),
-                                  ('references', (1,)),
-                                  ('base_activation', -1.2424533248940002),
-                                  ('activation_noise', -0.39368759350221544),
-                                  ('activation', -1.6361409183962157),
-                                  ('retrieval_probability', 0.00089874276769121)]),
-                     OrderedDict([('name', '11830'),
-                                  ('creation_time', 2),
-                                  ('attributes',
-                                   (('_utility', 1), ('_decision', 'safe'))),
-                                  ('references', (2, 4, 6, 7, 9, 12)),
-                                  ('base_activation', 1.0719456881845848),
-                                  ('activation_noise', -0.22839940241187714),
-                                  ('activation', 0.8435462857727076),
-                                  ('retrieval_probability', 0.9991012572323088)])]),
-                   ('blended', 1.017076112586133)]),
-      OrderedDict([('decision', 'risky'),
-                   ('activations',
-                    [OrderedDict([('name', '11828'),
-                                  ('creation_time', 1),
-                                  ('attributes',
-                                   (('_utility', 20), ('_decision', 'risky'))),
-                                  ('references', (1,)),
-                                  ('base_activation', -1.2424533248940002),
-                                  ('activation_noise', -0.5746788456816813),
-                                  ('activation', -1.8171321705756815),
-                                  ('retrieval_probability',
-                                   0.0015592418318597276)]),
-                     OrderedDict([('name', '11829'),
-                                  ('creation_time', 1),
-                                  ('attributes',
-                                   (('_utility', 2), ('_decision', 'risky'))),
-                                  ('references', (1, 8, 10)),
-                                  ('base_activation', 0.2724966041059383),
-                                  ('activation_noise', 0.11693394549873833),
-                                  ('activation', 0.3894305496046766),
-                                  ('retrieval_probability', 0.800552046743429)]),
-                     OrderedDict([('name', '11831'),
-                                  ('creation_time', 3),
-                                  ('attributes',
-                                   (('_utility', 0), ('_decision', 'risky'))),
-                                  ('references', (3, 5, 11)),
-                                  ('base_activation', 0.31982583502358525),
-                                  ('activation_noise', -0.4245203511568904),
-                                  ('activation', -0.10469451613330516),
-                                  ('retrieval_probability', 0.1978887114247114)])]),
-                   ('blended', 1.6322889301240524)])]]
+    >>> pp(a.details)
+    [[{'decision': 'safe',
+       'activations': [{'name': '0132',
+                        'creation_time': 0,
+                        'attributes': (('_utility', 20), ('_decision', 'safe')),
+                        'reference_count': 1,
+                        'references': [0],
+                        'base_level_activation': -1.2824746787307684,
+                        'activation_noise': 0.2343700698730416,
+                        'activation': -1.0481046088577268,
+                        'retrieval_probability': 0.0010536046644722481},
+                       {'name': '0135',
+                        'creation_time': 2,
+                        'attributes': (('_utility', 1), ('_decision', 'safe')),
+                        'reference_count': 6,
+                        'references': [2, 5, 7, 9, 11, 12],
+                        'base_level_activation': 1.184918357959952,
+                        'activation_noise': 0.1904030286066936,
+                        'activation': 1.3753213865666456,
+                        'retrieval_probability': 0.9989463953355276}],
+       'blended': 1.0200184886249728},
+      {'decision': 'risky',
+       'activations': [{'name': '0133',
+                        'creation_time': 0,
+                        'attributes': (('_utility', 20), ('_decision', 'risky')),
+                        'reference_count': 1,
+                        'references': [0],
+                        'base_level_activation': -1.2824746787307684,
+                        'activation_noise': -0.04867278847092464,
+                        'activation': -1.331147467201693,
+                        'retrieval_probability': 0.006544349628104761},
+                       {'name': '0134',
+                        'creation_time': 1,
+                        'attributes': (('_utility', 0), ('_decision', 'risky')),
+                        'reference_count': 3,
+                        'references': [1, 8, 10],
+                        'base_level_activation': 0.2724966041059383,
+                        'activation_noise': 0.16088543930698337,
+                        'activation': 0.43338204341292164,
+                        'retrieval_probability': 0.9624144271846764},
+                       {'name': '0136',
+                        'creation_time': 3,
+                        'attributes': (('_utility', 2), ('_decision', 'risky')),
+                        'reference_count': 3,
+                        'references': [3, 4, 6],
+                        'base_level_activation': 0.027153555019573457,
+                        'activation_noise': -0.8079194823991546,
+                        'activation': -0.7807659273795811,
+                        'retrieval_probability': 0.03104122318721878}],
+       'blended': 0.1929694389365328}]]
 
 We could use this information to, for example, to write detailed log
 files of many iterations of our model while it runs over thousands of
@@ -802,17 +770,13 @@ Reference
 
    .. automethod:: choose
 
-   .. automethod:: choose2
-
    .. automethod:: respond
+
+   .. automethod:: populate
 
    .. autoattribute:: default_utility
 
    .. autoattribute:: default_utility_populates
-
-   .. automethod:: populate
-
-   .. automethod:: populate_at
 
    .. automethod:: reset
 
@@ -828,6 +792,8 @@ Reference
 
    .. autoattribute:: mismatch_penalty
 
+   .. automethod:: similarity
+
    .. autoattribute:: optimized_learning
 
    .. automethod:: instances
@@ -836,15 +802,9 @@ Reference
 
    .. autoattribute:: trace
 
-.. autofunction:: similarity
+   .. automethod:: discrete_blend
 
-.. autofunction:: positive_linear_similarity
-
-.. autofunction:: positive_quadratic_similarity
-
-.. autofunction:: bounded_linear_similarity
-
-.. autofunction:: bounded_quadratic_similarity
+   .. autoattribute:: fixed_noise
 
 .. autoclass:: DelayedResponse
 
@@ -855,6 +815,14 @@ Reference
    .. autoattribute:: expectation
 
    .. automethod:: update
+
+.. autofunction:: positive_linear_similarity
+
+.. autofunction:: positive_quadratic_similarity
+
+.. autofunction:: bounded_linear_similarity
+
+.. autofunction:: bounded_quadratic_similarity
 
 
 Internals
@@ -881,14 +849,14 @@ components,
 
   .. math:: A_{i} = B_{i} + \epsilon_{i} + P_{i}
 
-the base level activation, the activation noise, and the partial matching correction.
+the base-level activation, the activation noise, and the partial matching correction.
 
-Base level activation
+Base-level activation
 ~~~~~~~~~~~~~~~~~~~~~
 
-The base level activation, :math:`B_{i}`, describes the frequency and recency of the instance *i*,
+The base-level activation, :math:`B_{i}`, describes the frequency and recency of the instance *i*,
 and depends upon the :attr:`decay` parameter of the :class:`Agent`, *d*. In the normal case, when the
-agent's :attr:`optimized_learning` parameter is ``False``, the base level activation is computed using
+agent's :attr:`optimized_learning` parameter is ``False``, the base-level activation is computed using
 the amount of time that has elapsed since each of the past appearances of *i*, which in the following
 are denoted as the various :math:`t_{ij}`.
 
@@ -901,6 +869,13 @@ Instead of using the times of all the past occurrences of *i*, it uses :math:`L_
 the first appearance of *i*, and :math:`n_i`, a count of the number of times *i* has appeared.
 
   .. math:: B_{i} = \ln(\frac{n_i}{1 - d}) - d \ln(L_i)
+
+The ``optimized_learning`` parameter may also be set to a positive integer. This specifies a number of most recent
+reinforcements of a chunk to be used to compute the base-level activation in the normal way, with the contributions
+of any older than those approximated using a formula similar to the preceding.
+
+Note that setting the ``decay`` parameter to ``None`` disables the computation of base-level
+activation. That is, the base-level component of the total activation is zero in this case.
 
 Activation noise
 ~~~~~~~~~~~~~~~~
@@ -926,19 +901,29 @@ has a value of one; and being completely dissimilar has a value of zero; with va
 positive, real numbers less than one.
 
 How to compute the similarity of two instances is determined by the programmer, using the
-function :func:`similarity`.
+method :meth:`similarity`.
+A function is supplied to this method to be applied to values of the
+attributes of given names, this function returning a similarity value. In addition, the ``similarity`` method
+can assign a weight, :math:`\omega`, to these attributes, allowing the mismatch contributions of multiple attributes
+to be scaled with respect to one another. If not explicitly supplied this weight defaults to one.
 
-If the :attr:`mismatch_penalty` parameter has real value :math:`\mu` and the similarity of slot *k* of *i* to the desired
-value of that slot in the retrieval is :math:`S_{ik}`, the partial matching correction is
+A function is supplied to this method to be applied to values of the
+attributes of given names, this function returning a similarity value. In addition, the ``similarity`` method
+can assign a weight, :math:`\omega`, to these slots, allowing the mismatch contributions of multiple slots
+to be scaled with respect to one another. If not explicitly supplied this weight defaults to one.
 
-  .. math:: P_{i} = \mu \sum_{k} (S_{ik} - 1)
+If the ``mismatch`` parameter has real value :math:`\mu`, the similarity of attribute *k* of
+instance *i* to the desired
+value of that attribute :math:`S_{ik}`, and the similarity weight of attribute *k* is :math:`\omega_{k}`,
+the partial matching correction is
+
+  .. math:: P_{i} = \mu \sum_{k} \omega_{k} (S_{ik} - 1)
 
 The value of :math:`\mu` should be positive, so :math:`P_{i}` is negative, and increasing dissimilarities
 reduce the total activation, scaled by the value of :math:`\mu`.
 
 Attributes for which no similarity function is defined are always matched exactly, non-matching instances not
-being considered at all. This is equivalent to such mismatching attributes having a negatively infinite
-mismatch partial matching correction.
+being considered at all.
 
 
 Blending
@@ -971,14 +956,62 @@ Changes to PyIBL
 Changes between versions 4.2 and 5.0
 ------------------------------------
 
+* PyIBL now requires Python 3.8 or later.
+* Substantial changes were made to the internal representations of agents and instances enabling faster IBL computations in
+  many use cases involving large numbers of instances.
+* :class:`Agent` attributes can now be any non-empty string, and the arguments to the :class:`Agent` constructor
+  are now in a different order.
+* Changed the arguments to :meth:`choose`, :meth:`populate` and :meth:`forget`.
+* Similarity functions are now per-:class:`Agent` instead of global, and are set with the :meth:`similarity` method.
+* Similarities can now have weights, also set with the :meth:`similarity` method, allowing easier balancing
+  of the contributions of multiple attributes.
 * The :meth:`advance` method has been added to the API.
-* Changes were made to the internal representations of instances enabling faster IBL computations in many use cases
-  involving large numbers of instances.
-* TODO change arguments to several functions (choose, populate, what else?), and related argument signature changes
-* TODO changes to how partial matching is declared
-* TODO choose2 has been replaced by an optional argument to choose
-* The default value of :attr:`default_utility_populates` is now ``False``.
+* The :meth:`choose2` method has been replaced by an optional argument to :meth:`choose`.
+* The :meth:`populate_at` method has been replaced by an optional argument to :meth:`populate`.
+* There is a new method :meth:`discrete_blend` useful for creating models using a different paradigm
+  from PyIBL’s usual :meth:`choose`/:meth:`respond` cycle.
+* It is now possible to set :attr:`optimized_learning` as an :class:`Agent` parameter in the usual way, instead
+  of as an argument to :meth:`reset`. In addition, :attr:`optimized_learning` can now take positive integers
+  as its value, enabling a mixed mode of operation.
+* The default value of :attr:`default_utility_populates` is now ``False``, and it can be set at :class:`Agent`
+  creation time with an argument to the constructor.
+* There is a new :class:`Agent` property, :attr:`fixed_noise`, allowing a variant noise generation scheme
+  for unusual models.
 * General tidying and minor bug fixes.
+
+When upgrading existing version 4.x models to version 5.0 or later some syntactic changes will nearly always
+have to be made. In particular, PyIBL no longer abuses Python’s keyword arguments, and lists of choices now need
+to be passed to :meth:`choose` and :meth:`populate`, which now also take their arguments in a different order.
+In simple cases this is as easy as surrounding the formerly trailing arguments by square bracket, and swapping
+the result two arguments. For more complex cases it may be necessary to pass a list of dictionaries.
+For example, what in version 4.x would have been expressed as
+
+.. code-block:: python
+
+    a.populate(10, "red", "blue")
+    a.choose("red", "blue")
+
+could be expressed in version 5.0 as
+
+.. code-block:: python
+
+    a.populate(["red", "blue"], 10)
+    a.choose(["red", "blue"])
+
+If you are using partial matching you will also have to replace calls to the :func:`similarity` function by
+the :class:`Agent`’s :meth:`similarity` method. This method also takes slightly different arguments than
+the former function.
+For example, what in version 4.x would have been expressed as
+
+.. code-block:: python
+
+    similarity(cubic_similarity, "weight", "volume")
+
+could be expressed in version 5.0 as
+
+.. code-block:: python
+
+    a.similarity(["weight", "volume"], cubic_similarity)
 
 
 Changes between versions 4.2 and  4.2.0.1
