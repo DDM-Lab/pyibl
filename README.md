@@ -10,9 +10,9 @@ PyIBL requires Python version 3.8 or later. PyIBL also works in recent
 versions of PyPy.
 
 The latest released version of PyIBL may be installed from PyPi with pip:
-```
-pip install pyibl
-```
+
+    pip install pyibl
+
 
 For further information, including the documentation see the
 [online documentation](http://pyibl.ddmlab.com).
