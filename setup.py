@@ -6,7 +6,7 @@ from pyibl import __version__
 DESCRIPTION = open("README.md").read()
 
 setup(name="pyibl",
-      version=__version__
+      version=__version__,
       description="A Python implementation of a subset of Instance Based Learning Theory",
       license="Free for research purposes",
       author="Dynamic Decision Making Laboratory of Carnegie Mellon University",

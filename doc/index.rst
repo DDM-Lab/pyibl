@@ -42,9 +42,6 @@ The latest version of PyIBL can be downloaded and installed from PyPi with ``pip
 Use of a virtual environment for Python, such as ``venv`` or Anaconda is recommended.
 
 PyIBL requires Python version 3.8 or later.
-PyIBL also works in recent versions of `PyPy <https://pypy.org/>`_, an alternative implementation to the usual CPython.
-PyPy uses a just-in-time (JIT) compiler, which is a good match for PyIBL, and PyIBL models often
-run faster in PyPy compared to CPython.
 
 Note that PyIBL is simply a Python module, a library, that is run as part of a larger
 Python program. To build and run models using PyIBL you do need to do
