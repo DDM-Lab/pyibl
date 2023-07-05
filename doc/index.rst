@@ -1,4 +1,4 @@
-.. Copyright 2014-2022 Carnegie Mellon University
+.. Copyright 2014-2023 Carnegie Mellon University
 
 PyIBL version 5.0
 *****************
@@ -472,7 +472,7 @@ by defining an agent that expects choices to have a single attribute, ``n``.
 
 .. code-block:: python
 
-    >>> from pyibl import Agent, similarity
+    >>> from pyibl import Agent
     >>> from random import random
     >>> import math
     >>> import sys
