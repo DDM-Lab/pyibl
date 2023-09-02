@@ -132,10 +132,9 @@ class Agent:
 
     def reset(self, preserve_prepopulated=False):
         """Erases this agent's memory and resets its time to zero.
-        If *preserve_prepopulated* is ``False`` it deletes all the instances from this
-        agent; if it is ``True`` it deletes all those not created at time zero. IBLT
-        parameters such as :attr:`noise` and :attr:`decay` are not affected. If ``False``
-        any prepopulated instances, including those created automatically if a
+        If it is ``True`` it deletes all those not created at time zero. IBLT parameters
+        such as :attr:`noise` and :attr:`decay` are not affected. If ``False`` any
+        prepopulated instances, including those created automatically if a
         :attr:`default_utility` is provided and :attr:`default_utility_populates` is
         ``True`` are removed, but the settings of those properties are not altered.
         """
@@ -286,7 +285,7 @@ class Agent:
 
     @property
     def optimized_learning(self):
-        """Whether or not this :class:"`Agent` uses the optimized_learning approximation when computing instance activations.
+        """Whether or not this :class:`Agent` uses the optimized_learning approximation when computing instance activations.
         If ``False``, the default, optimized learning is not used. If ``True`` is is used
         for all cases. If a positive integer, that number of the most recent rehearsals of
         an instance are used exactly, with any older rehearsals having their contributions
@@ -474,7 +473,7 @@ class Agent:
         When a default utility is needed that function will be called, passing the choice
         in question to it, and the value returned, which should be a Real, will be used.
         If at that time the value is not a function of one argument, or it does not return
-        a Real, an :exc:`RuntimeError` is raised.
+        a Real, a :exc:`RuntimeError` is raised.
 
         The :attr:`default_utility_populates` property, which is ``False`` by default,
         controls whether or not an instance is added for each interrogation of
@@ -557,7 +556,7 @@ class Agent:
             be exercised to avoid biologically implausible models. It should not normally
             be necessary to use the *when* argument, which is provided only for esoteric
             uses. In particular adding instances in the future will usually result in
-            tears as operations such as :meth:`choose" will raise an :exc:`Exception`.
+            tears as operations such as :meth:`choose` will raise an :exc:`Exception`.
         """
         if when is not None:
             return self._at_time(when, lambda: self.populate(choices, outcome))
@@ -661,7 +660,7 @@ class Agent:
         exactly, and the similarities modified by the mismatch penalty are subtracted from
         the activations. If partial matching is not enabled only those instances that
         match exactly are consulted. "Exact" matches are based on Python's ``==``
-        operator, not ``is``. Thus, for example ``0``, ``0.0`` and ``False`` all match on
+        operator, not ``is``. Thus, for example ``0``, ``0.0`` and ``False`` all match one
         another, as do ``1``, ``1.0`` and ``True``.
 
         Looking at the activations of the whole ensemble of instances matching a choice a
@@ -676,13 +675,13 @@ class Agent:
         :meth:`respond` before calling :meth:`choose` again, or a :exc:`RuntimeError` will
         be raised.
 
-        If the *details* argument is also supplied and is ``True`` a second value is also
-        returned, containing data used to arrive at the selection. While the comparison of
-        blended values used by :meth:`choose` is the appropriate process for most models,
-        for some specialized purposes the modeler may wish to implement a different
-        decision procedure. This additional information, when combined with supplying a
-        second argment to :meth:`respond`, facilitates the construction of such more
-        complicated models.
+        If the *details* argument is also supplied and is ``True`` two values are returned
+        as a 2-tuple, the first as above and the second containing data used to arrive at
+        the selection. While the comparison of blended values used by :meth:`choose` is
+        the appropriate process for most models, for some specialized purposes the modeler
+        may wish to implement a different decision procedure. This additional information,
+        when combined with supplying a second argment to :meth:`respond`, facilitates the
+        construction of such more complicated models.
 
         The second return value is a list of dicts, one for each choice. These dicts have
         entries for the choice, the blended value, and a list of retrieval probability
@@ -725,6 +724,7 @@ class Agent:
                                    'retrieval_probability': 0.12721710762355765},
                                   {'utility': 1,
                                    'retrieval_probability': 0.8727828923764424}]}]
+
         """
         if self._pending_decision:
             raise RuntimeError("choice requested before previous outcome was supplied")
@@ -859,7 +859,7 @@ class Agent:
         :meth:`Choose`, or if performing model tracing of an individual human's behavior
         on the experiment being modeled. To support these unusual cases a second argument
         may be passed to :meth:`respond`, which is the choice to actually be made. If it
-        is not one of the choices provided in the original call to :meth:`choose a
+        is not one of the choices provided in the original call to :meth:`choose` a
         ``ValueError`` is raised.
 
         It is also possible to delay feedback, by calling :meth:`respond` without

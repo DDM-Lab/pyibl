@@ -1,7 +1,7 @@
 .. Copyright 2014-2023 Carnegie Mellon University
 
-PyIBL version 5.0
-*****************
+PyIBL version 5.0.1
+*******************
 
 .. contents::
 
@@ -40,7 +40,8 @@ The latest version of PyIBL can be downloaded and installed from PyPi with ``pip
 
   .. parsed-literal:: pip install pyibl
 
-Use of a virtual environment for Python, such as ``venv`` or Anaconda is recommended.
+Use of a virtual environment for Python, such as `venv <https://docs.python.org/3.8/library/venv.html>`_
+or `Anaconda <https://www.anaconda.com/>`_ is recommended.
 
 PyIBL requires Python version 3.8 or later.
 
@@ -112,8 +113,7 @@ graphical IDE.
 .. code-block::
 
     $ python
-    Python 3.9.0 | packaged by conda-forge | (default, Oct 14 2020, 22:59:50)
-    [GCC 7.5.0] on linux
+    Python 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] on linux
     Type "help", "copyright", "credits" or "license" for more information.
     >>> from pyibl import Agent
 
@@ -750,7 +750,7 @@ Here we run the model one more time and print the result details.
                         'retrieval_probability': 0.03104122318721878}],
        'blended': 0.1929694389365328}]]
 
-We could use this information to, for example, to write detailed log
+We could use this information, for example, to write detailed log
 files of many iterations of our model while it runs over thousands of
 iterations.
 
@@ -860,7 +860,7 @@ are denoted as the various :math:`t_{ij}`.
 
   .. math:: B_{i} = \ln(\sum_{j} t_{ij}^{-d})
 
-If the agent's :attr:`optimized_learning` parameter is ``True`` an approximation is used instead, often less taxing of
+If the agent's :attr:`optimized_learning` parameter is ``True`` an approximation is used instead, sometimes less taxing of
 computational resources. It is particularly useful if the same instances are expected to be seen many times, and assumes
 that repeated experiences of the various instances are distributed roughly evenly over time.
 Instead of using the times of all the past occurrences of *i*, it uses :math:`L_i`, the amount of time since
@@ -905,11 +905,6 @@ attributes of given names, this function returning a similarity value. In additi
 can assign a weight, :math:`\omega`, to these attributes, allowing the mismatch contributions of multiple attributes
 to be scaled with respect to one another. If not explicitly supplied this weight defaults to one.
 
-A function is supplied to this method to be applied to values of the
-attributes of given names, this function returning a similarity value. In addition, the ``similarity`` method
-can assign a weight, :math:`\omega`, to these slots, allowing the mismatch contributions of multiple slots
-to be scaled with respect to one another. If not explicitly supplied this weight defaults to one.
-
 If the ``mismatch`` parameter has real value :math:`\mu`, the similarity of attribute *k* of
 instance *i* to the desired
 value of that attribute :math:`S_{ik}`, and the similarity weight of attribute *k* is :math:`\omega_{k}`,
@@ -950,6 +945,13 @@ the  blended value, *BV*, is then
 
 Changes to PyIBL
 ================
+
+Changes between versions 5.0 and 5.0.1
+--------------------------------------
+
+* Update copyrights, documentation and dependencies.
+* Fix a bug afflicting tracing when noise is zero.
+
 
 Changes between versions 4.2 and 5.0
 ------------------------------------
