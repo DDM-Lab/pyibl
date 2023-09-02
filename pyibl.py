@@ -1,4 +1,4 @@
-# Copyright 2014-2022 Carnegie Mellon University
+# Copyright 2014-2023 Carnegie Mellon University
 
 """PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT). The
 principle class is :class:`Agent`, an instance of which is a cognitive entity learning and
@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.0"
+__version__ = "5.0.1"
 
 PYACTUP_MINIMUM_VERSION = "2.0.dev1"
 
@@ -837,7 +837,7 @@ class Agent:
             row.append(h["references"] if self._memory.optimized_learning else list(h["references"]))
             row.append(attrs["_utility"])
             row.append(h["base_level_activation"])
-            row.append(h["activation_noise"])
+            row.append(h.get("activation_noise") or 0.0)
             if self._memory.mismatch:
                 row.append(h["mismatch"])
             row.append(h["activation"])

@@ -1,4 +1,4 @@
-.PHONY: dist
+.PHONY: dist clean
 
 dist:	clean
 	python -m build -n

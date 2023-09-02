@@ -382,6 +382,7 @@ def test_reset():
     assert a.time == 1
     assert len(a.instances(None)) == 1
     a.reset()
+    a.optimized_learning = False
     a.default_utility_populates = True
     a.choose("abc")
     a.respond(0.01)
@@ -789,6 +790,9 @@ def test_trace(capsys):
     a.choose("abcd")
     a.respond(0)
     assert len(capsys.readouterr().out) > len(x)
+    a.temperature = 1
+    a.noise = 0
+    a.choose("abcd")            # shouldn't raise error with zero noise
 
 def test_positive_linear_similarity():
     assert isclose(positive_linear_similarity(1, 2), 0.5)
