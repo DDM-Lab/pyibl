@@ -1,6 +1,6 @@
 .. Copyright 2014-2023 Carnegie Mellon University
 
-PyIBL version 5.0.1
+PyIBL version 5.0.3
 *******************
 
 .. contents::
@@ -945,6 +945,12 @@ the  blended value, *BV*, is then
 
 Changes to PyIBL
 ================
+
+Changes between versions 5.0.1 and 5.0.3
+----------------------------------------
+
+* Add further information to trace output
+* Update some copyrights and documentation.
 
 Changes between versions 5.0 and 5.0.1
 --------------------------------------

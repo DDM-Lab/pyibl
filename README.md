@@ -17,5 +17,5 @@ The latest released version of PyIBL may be installed from PyPi with pip:
 For further information, including the documentation see the
 [online documentation](http://pyibl.ddmlab.com).
 
-PyIBL is copyright 2014-2022 by Carnegie Mellon University. It may be
+PyIBL is copyright 2014-2023 by Carnegie Mellon University. It may be
 freely used, and modified, but only for research purposes.

@@ -9,9 +9,9 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.0.1"
+__version__ = "5.0.3"
 
-PYACTUP_MINIMUM_VERSION = "2.0.dev1"
+PYACTUP_MINIMUM_VERSION = "2.0"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)
@@ -19,6 +19,7 @@ if "dev" in __version__:
 import collections.abc as abc
 import csv
 import io
+import math
 import numbers
 import os
 import pyactup
@@ -46,6 +47,8 @@ if version.parse(pyactup.__version__) < version.parse(PYACTUP_MINIMUM_VERSION):
 __all__ = ["Agent", "DelayedResponse",
            "positive_linear_similarity", "positive_quadratic_similarity",
            "bounded_linear_similarity", "bounded_quadratic_similarity"]
+
+SQRT2 = math.sqrt(2)
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -394,7 +397,7 @@ class Agent:
         """A boolean which, if ``True``, causes the :class:`Agent` to print details of its computations to standard output.
         Intended for use as a tool for debugging models. By default it is ``False``.
 
-        The output is divided into the blocks, the first line of which describes the
+        The output is divided into blocks, the first line of which describes the
         choice being described and the blended value of its outcome. This is followed by
         a tabular description of various intermediate values used to arrive at this
         blended value.
@@ -403,46 +406,46 @@ class Agent:
 
          >>> a = Agent(default_utility=10, default_utility_populates=True)
          >>> a.choose(["a", "b", "c"])
-         'a'
-         >>> a.respond(5)
-         >>> a.choose(["a", "b", "c"])
-         'c'
-         >>> a.respond(7.2)
-         >>> a.choose(["a", "b", "c"])
          'b'
+         >>> a.respond(5)
+         >>> a.choose()
+         'a'
+         >>> a.respond(7.2)
+         >>> a.choose()
+         'c'
          >>> a.respond(2.3)
          >>> a.choose()
          'a'
-         >>> a.respond(5)
+         >>> a.respond(7.2)
          >>> a.trace = True
          >>> a.choose()
 
-         a → 5.7482098963642425
-         +------+----------+---------+-------------+---------+---------------------+---------------------+----------------------+-----------------------+
-         |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise  |   total activation   | retrieval probability |
-         +------+----------+---------+-------------+---------+---------------------+---------------------+----------------------+-----------------------+
-         | 0022 |    a     |    0    |     [0]     |    10   | -0.6931471805599453 |  0.2696498251765441 | -0.42349735538340116 |  0.14964197927284847  |
-         | 0025 |    a     |    1    |    [0, 4]   |    5    |  0.4054651081081644 | -0.2146946217750441 |  0.1907704863331203  |   0.8503580207271516  |
-         +------+----------+---------+-------------+---------+---------------------+---------------------+----------------------+-----------------------+
+         a → 7.214829206137316 @ time=5
+         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+---------------------+-----------------------+
+         |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise  |   total activation  |   exp(act / temp)   | retrieval probability |
+         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+---------------------+-----------------------+
+         | 0006 |    a     |    0    |     [0]     |    10   | -0.8047189562170503 | 0.23439403910287038 | -0.5703249171141799 | 0.19926444531722448 |  0.00529614504904138  |
+         | 0010 |    a     |    2    |    [2, 4]   |   7.2   | 0.45574639440832615 |  0.8249453921296758 |  1.2806917865380019 |  37.425166810260265 |   0.9947038549509586  |
+         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+---------------------+-----------------------+
 
-         b → 2.8892224885373707
-         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
-         |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise  |   total activation  | retrieval probability |
-         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
-         | 0023 |    b     |    0    |     [0]     |    10   | -0.6931471805599453 | 0.01639160687781119 | -0.6767555736821341 |  0.07652240110874947  |
-         | 0027 |    b     |    3    |     [3]     |   2.3   | -0.3465735902799726 |  0.5503650166906361 |  0.2037914264106635 |   0.9234775988912505  |
-         +------+----------+---------+-------------+---------+---------------------+---------------------+---------------------+-----------------------+
+         b → 8.633125874767709 @ time=5
+         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+----------------------+-----------------------+
+         |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise   |   total activation  |   exp(act / temp)    | retrieval probability |
+         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+----------------------+-----------------------+
+         | 0007 |    b     |    0    |     [0]     |    10   | -0.8047189562170503 | -0.16726717777620997 | -0.9719861339932603 |  0.063979539230306   |   0.7266251749535416  |
+         | 0009 |    b     |    1    |     [1]     |    5    | -0.6931471805599453 | -0.6244610552806152  | -1.3176082358405605 | 0.024070725797184517 |  0.27337482504645844  |
+         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+----------------------+-----------------------+
 
-         c → 7.442068460676917
-         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
-         |  id  | decision | created | occurrences | outcome |   base activation   |   activation noise   |   total activation  | retrieval probability |
-         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
-         | 0024 |    c     |    0    |     [0]     |    10   | -0.6931471805599453 |  -0.787690810308673  | -1.4808379908686184 |  0.08645302167032752  |
-         | 0026 |    c     |    2    |     [2]     |   7.2   | -0.5493061443340549 | -0.09794712508874652 | -0.6472532694228014 |   0.9135469783296726  |
-         +------+----------+---------+-------------+---------+---------------------+----------------------+---------------------+-----------------------+
+         c → 5.881552425492787 @ time=5
+         +------+----------+---------+-------------+---------+---------------------+--------------------+----------------------+--------------------+-----------------------+
+         |  id  | decision | created | occurrences | outcome |   base activation   |  activation noise  |   total activation   |  exp(act / temp)   | retrieval probability |
+         +------+----------+---------+-------------+---------+---------------------+--------------------+----------------------+--------------------+-----------------------+
+         | 0008 |    c     |    0    |     [0]     |    10   | -0.8047189562170503 | 0.5923008644042377 | -0.21241809181281257 | 0.548367776208054  |   0.4651366786354268  |
+         | 0011 |    c     |    3    |     [3]     |   2.3   | -0.3465735902799726 | 0.1835398166993702 | -0.1630337735806024  | 0.6305712354751412 |   0.5348633213645733  |
+         +------+----------+---------+-------------+---------+---------------------+--------------------+----------------------+--------------------+-----------------------+
 
-         'c'
-        """
+         'b'
+         """
         return self._trace
 
     @trace.setter
@@ -817,13 +820,13 @@ class Agent:
             print(", ".join(list(f"{k}: {v}" for k, v in query.items())), end="")
         else:
             print(query["_decision"], end="")
-        print(f" → {utility}")
+        print(f" → {utility} @ time={self.time}")
         tab = PrettyTable()
         fields = (["id"] + (list(self.attributes) or ["decision"]) +
                   ["created", "occurrences", "outcome", "base activation", "activation noise"])
         if self._memory.mismatch:
             fields.append("mismatch adjustment")
-        fields.extend(["total activation", "retrieval probability"])
+        fields.extend(["total activation", "exp(act / temp)", "retrieval probability"])
         tab.field_names = fields
         for h in history:
             attrs = dict(h["attributes"])
@@ -841,6 +844,7 @@ class Agent:
             if self._memory.mismatch:
                 row.append(h["mismatch"])
             row.append(h["activation"])
+            row.append(math.exp(h["activation"] / (self.temperature or SQRT2 * self.noise)))
             row.append(h["retrieval_probability"])
             tab.add_row(row)
         print(tab, flush=True)
