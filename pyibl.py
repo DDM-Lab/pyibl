@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.0.4dev1"
+__version__ = "5.1dev1"
 
 PYACTUP_MINIMUM_VERSION = "2.0"
 
@@ -22,15 +22,14 @@ import io
 import math
 import numbers
 import os
+import pandas as pd
 import pyactup
 import random
 import re
 import sys
 import warnings
 
-from collections import namedtuple
 from itertools import count
-from keyword import iskeyword
 from numbers import Real
 from packaging import version
 from prettytable import PrettyTable
@@ -49,6 +48,10 @@ __all__ = ["Agent", "DelayedResponse",
            "bounded_linear_similarity", "bounded_quadratic_similarity"]
 
 SQRT2 = math.sqrt(2)
+AGGREGATE_COLUMNS = tuple(("time,choice,utility,option,blended_value,"
+                           "retrieval_probability,activation,base_level_activation,"
+                           "activation_noise,mismatch").split(","))
+
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -101,6 +104,7 @@ class Agent:
         self.default_utility = default_utility
         self.default_utility_populates = default_utility_populates
         self._details = None
+        self._aggregate_details = None
         self._trace = False
         self._fixed_noise = fixed_noise
         self.reset()
@@ -391,6 +395,21 @@ class Agent:
         if not (value is None or isinstance(value, abc.MutableSequence)):
             raise ValueError("the value of details must be None or a list or other MutableSequence")
         self._details = value
+
+    @property
+    def aggregate_details(self):
+        """
+        """
+        if self._aggregate_details is None:
+            return None
+        return pd.DataFrame(self._aggregate_details, columns=AGGREGATE_COLUMNS)
+
+    @aggregate_details.setter
+    def aggregate_details(self, value):
+        if value:
+            self._aggregate_details = []
+        else:
+            self._aggregate_details = None
 
     @property
     def trace(self):
@@ -741,7 +760,7 @@ class Agent:
         self._previous_choices = choices
         det = [] if self._details is not None else None
         try:
-            if details or det is not None or self._trace:
+            if details or det is not None or self._trace or self._aggregate_details is not None:
                 history = []
                 self._memory.activation_history = history
             else:
@@ -750,6 +769,7 @@ class Agent:
                 self._memory.advance(self._last_learn_time - self._memory.time + 1)
             utilities = []
             ret_probs = []
+            agg_len = len(self._aggregate_details) if self._aggregate_details is not None else None
             def do_choose(history):
                 for c, q in zip(choices, queries):
                     u = self._memory.blend("_utility", q)
@@ -776,6 +796,19 @@ class Agent:
                     if history is not None:
                         if self._trace:
                             self._print_trace(q, u, history)
+                        if (ad := self._aggregate_details) is not None:
+                            # cf. the definition of AGGREGATE_COLUMNS near the top of this file
+                            ad.extend([self.time,
+                                       None,
+                                       (att := d["attributes"])[0][1],
+                                       tuple(a[1] for a in att[1:]) if self._attributes else att[1][1],
+                                       u,
+                                       d["retrieval_probability"],
+                                       (act := d["activation"]),
+                                       (bla := d["base_level_activation"]),
+                                       (an := d["activation_noise"]),
+                                       (act - bla - an) if self.mismatch_penalty else 0]
+                                      for d in history)
                         history = []
                         self._memory.activation_history = history
             if (not self._fixed_noise):
@@ -799,15 +832,19 @@ class Agent:
                 best_indecies.append(i)
         best = random.choice(best_indecies)
         self._pending_decision = (best, choices, queries, utilities)
+        if agg_len is not None:
+            for v in self._aggregate_details[agg_len:]:
+                v[1] = tuple(queries[best].values()) if self._attributes else queries[best]["_decision"]
+        result = choices[best]
         if details:
-            return choices[best], sorted(({"choice": c,
-                                           "blended_value": bv,
-                                           "retrieval_probabilities": rp}
-                                         for c, bv, rp in zip(choices, utilities, ret_probs)),
-                                         key=lambda x: x.get("blended_value"),
-                                         reverse=True)
+            return result, sorted(({"choice": c,
+                                    "blended_value": bv,
+                                    "retrieval_probabilities": rp}
+                                   for c, bv, rp in zip(choices, utilities, ret_probs)),
+                                  key=lambda x: x.get("blended_value"),
+                                  reverse=True)
         else:
-            return choices[best]
+            return result
 
     def _extract_instance_utility(inst):
         first_attr = inst["attributes"][0]

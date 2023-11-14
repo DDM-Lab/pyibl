@@ -18,9 +18,10 @@ setup(name="pyibl",
       py_modules=["pyibl"],
       install_requires=[
           "pyactup>=2.0.11",
-          "ordered_set",
           "prettytable",
-          "packaging"],
+          "ordered_set",
+          "pandas",
+          "packaging"]
       tests_require=["pytest"],
       python_requires=">=3.8",
       classifiers=["Intended Audience :: Science/Research",
