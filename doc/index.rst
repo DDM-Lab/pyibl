@@ -1,7 +1,6 @@
 .. Copyright 2014-2023 Carnegie Mellon University
 
 PyIBL version 5.1
-*****************
 
 .. contents::
 
@@ -945,6 +944,11 @@ the  blended value, *BV*, is then
 
 Changes to PyIBL
 ================
+
+Changes between versions 5.0.2 and 5.0.4
+----------------------------------------
+
+* the sequence of all attribute names is now a tuple of strings rather than a list
 
 Changes between versions 5.0.1 and 5.0.3
 ----------------------------------------

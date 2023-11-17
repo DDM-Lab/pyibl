@@ -61,11 +61,11 @@ class Agent:
     will be created of the form ``'Anonymous-Agent-n'``, where *n* is a unique integer.
 
     An :class:`Agent` also has zero or more *attributes*, named by strings. The attribute
-    names can be retrieved with the :attr:`attributes` property, and also cannot be
-    changed after an agent is created. Attribute names must be non-empty strings. The
-    value of *attributes*, if present, should be a list of strings. As a convenience if
-    none of the attribute names contain spaces or commas a string consisting of the
-    names, separated by commas or spaces (but not both) may be used instead of a list.
+    names can be retrieved with the :attr:`attributes` property, and cannot be changed
+    after an agent is created. Attribute names must be non-empty strings. The value of
+    *attributes*, if present, should be an :class:`Iterable` of strings. As a convenience
+    if none of the attribute names contain spaces or commas a string consisting of the
+    names, separated by commas or spaces may be used instead of a list.
 
     The agent properties :attr:`noise`, :attr:`decay`, :attr:`temperature`,
     :attr:`mismatch_penalty`, :attr:`optimized_learning`, :attr:`default_utility`,
@@ -96,7 +96,7 @@ class Agent:
         self._name = name
         self._memory = pyactup.Memory(optimized_learning=optimized_learning,
                                       threshold=None,
-                                      index=(self._attributes or ["_decision"]))
+                                      index=(self._attributes or ("_decision",)))
         self.temperature = temperature # set temperature BEFORE noise
         self.noise = noise
         self.decay = decay
@@ -126,13 +126,13 @@ class Agent:
 
     @property
     def attributes(self):
-        """A list  of the names of the attributes included in all situations associated with decisions this agent will be asked to make.
+        """A tuple of the names of the attributes included in all situations associated with decisions this agent will be asked to make.
         These names are assigned when the agent is created and cannot be
         changed, and are strings. The order of them in the returned
-        list is the same as that in which they were given when the
+        tuple is the same as that in which they were given when the
         agent was created.
         """
-        return list(self._attributes)
+        return self._attributes
 
     def _preferred_index(self):
         return [a for a in self.attributes if not self._memory._similarities.get(a)]
@@ -1008,11 +1008,11 @@ class Agent:
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
         The *attributes* are names of attributes of the :class:`Agent`. The value of
-        *attributes*, if present, should be a list of strings. As a convenience if none of
-        the attribute namess contain spaces or commas a string consisting of the names,
-        separated by commas or spaces (but not both) may be used instead of a list. For an
-        :class:`Agent` that has no attributes the *attributes* argument should be empty or
-        omitted.
+        *attributes*, if present, should be an :class:`Iterable` of strings. As a
+        convenience if none of the attribute namess contain spaces or commas a string
+        consisting of the names, separated by commas or spaces may be used instead of a
+        list. For an :class:`Agent` that has no attributes the *attributes* argument
+        should be empty or omitted.
 
         The *function* argument should be a ``Callable``, taking two arguments, or
         ``True``. The similarity value returned should be a real number between zero and
@@ -1052,6 +1052,7 @@ class Agent:
         ...         return 0
         ...
         >>> a.similarity("color", color_similarity, 0.5)
+
         """
         self._memory.similarity((pyactup.Memory._ensure_slot_names(attributes)
                                  or [ "_decision" ]),
