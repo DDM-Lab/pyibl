@@ -27,7 +27,7 @@ def randomseed(n=0):
 def test_agent_init():
     a = Agent()
     assert re.fullmatch(r"agent-\d+", a.name)
-    assert a.attributes == []
+    assert a.attributes == ()
     assert isclose(a.noise, 0.25)
     assert isclose(a.decay, 0.5)
     assert a.temperature is None
@@ -49,7 +49,7 @@ def test_agent_init():
     assert a != a2
     assert a.name == "Test Agent"
     assert a2.name == "Test Agent"
-    assert a.attributes == ["a1", "a2"]
+    assert a.attributes == ("a1", "a2")
     assert isclose(a.noise, 0)
     assert isclose(a.decay, 0)
     assert isclose(a.temperature, 1)
@@ -58,7 +58,7 @@ def test_agent_init():
     assert isclose(a.default_utility, 1)
     assert not a.default_utility_populates
     assert a.time == 0
-    assert a2.attributes == []
+    assert a2.attributes == ()
     assert isclose(a2.noise, 0.25)
     assert isclose(a2.decay, 0.5)
     assert a2.temperature is None
@@ -77,10 +77,10 @@ def test_agent_init():
         Agent(mismatch_penalty=-0.001)
     with pytest.raises(TypeError):
         Agent(attributes=1)
-    assert Agent("a b c").attributes == ["a", "b", "c"]
-    assert Agent("b,c,a").attributes == ["b", "c", "a"]
-    assert Agent("b,c,a").attributes == ["b", "c", "a"]
-    assert Agent(name="Orange", attributes="c,b,a").attributes == ["c", "b", "a"]
+    assert Agent("a b c").attributes == ("a", "b", "c")
+    assert Agent("b,c,a").attributes == ("b", "c", "a")
+    assert Agent("b,c,a").attributes == ("b", "c", "a")
+    assert Agent(name="Orange", attributes="c,b,a").attributes == ("c", "b", "a")
     with pytest.raises(ValueError):
         Agent("a b c d e c f g")
 
