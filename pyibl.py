@@ -804,10 +804,10 @@ class Agent:
                                        tuple(a[1] for a in att[1:]) if self._attributes else att[1][1],
                                        u,
                                        d["retrieval_probability"],
-                                       (act := d["activation"]),
-                                       (bla := d["base_level_activation"]),
-                                       (an := d["activation_noise"]),
-                                       (act - bla - an) if self.mismatch_penalty else 0]
+                                       d["activation"],
+                                       d["base_level_activation"],
+                                       d["activation_noise"],
+                                       d.get("mismatch", 0)]
                                       for d in history)
                         history = []
                         self._memory.activation_history = history
