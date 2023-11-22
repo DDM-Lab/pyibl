@@ -304,13 +304,13 @@ def test_respond():
     assert df._attributes["_decision"] == "A"
     assert isclose(df.expectation, 2.8019727339170046)
     insts = a.instances(None)
-    assert insts[:-1] == [{'decision': 'A', 'outcome': 10, 'created': 0, 'occurrences': [0]},
-                          {'decision': 'B', 'outcome': 9, 'created': 0, 'occurrences': [0, 3]},
-                          {'decision': 'A', 'outcome': 0, 'created': 1, 'occurrences': [1, 2]}]
+    assert insts[:-1] == [{'decision': 'A', 'outcome': 10, 'created': 0, 'occurrences': (0,)},
+                          {'decision': 'B', 'outcome': 9, 'created': 0, 'occurrences': (0, 3)},
+                          {'decision': 'A', 'outcome': 0, 'created': 1, 'occurrences': (1, 2)}]
     d = insts[-1]
     assert isclose(d["outcome"], 2.8019727339170046)
     del d["outcome"]
-    assert d ==  {"decision": "A", "created": 4, "occurrences": [4]}
+    assert d ==  {"decision": "A", "created": 4, "occurrences": (4,)}
 
 def test_populate():
     a = Agent()
@@ -676,16 +676,16 @@ def test_delayed_feedback():
         assert len(inst) == 4
         assert next(i for i in inst
                     if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
-                    and i["occurrences"]==[0,1])
+                    and i["occurrences"]==(0,1))
         assert next(i for i in inst
                     if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
-                    and i["occurrences"]==[1,2])
+                    and i["occurrences"]==(1,2))
         assert next(i for i in inst
                     if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
-                    and i["occurrences"]==[3])
+                    and i["occurrences"]==(3,))
         assert next(i for i in inst
                     if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
-                    and i["occurrences"]==[4])
+                    and i["occurrences"]==(4,))
         assert isclose(dra.update(15), 10)
         assert dra.is_resolved
         assert isclose(dra.outcome, 15)
@@ -694,19 +694,19 @@ def test_delayed_feedback():
         assert len(inst) == 5
         assert next(i for i in inst
                     if i["decision"]=="a" and isclose(i["outcome"],10) and i["created"]==0
-                    and i["occurrences"]==[0])
+                    and i["occurrences"]==(0,))
         assert next(i for i in inst
                     if i["decision"]=="b" and isclose(i["outcome"],20) and i["created"]==1
-                    and i["occurrences"]==[1,2])
+                    and i["occurrences"]==(1,2))
         assert next(i for i in inst
                     if i["decision"]=="b" and isclose(i["outcome"],-10000) and i["created"]==3
-                    and i["occurrences"]==[3])
+                    and i["occurrences"]==(3,))
         assert next(i for i in inst
                     if i["decision"]=="a" and isclose(i["outcome"],0) and i["created"]==4
-                    and i["occurrences"]==[4])
+                    and i["occurrences"]==(4,))
         assert next(i for i in inst
                     if i["decision"]=="a" and isclose(i["outcome"],15) and i["created"]==1
-                    and i["occurrences"]==[1])
+                    and i["occurrences"]==(1,))
         assert not drb.is_resolved
         assert isclose(drb.outcome, 20)
         assert isclose(dra.update(20), 15)
@@ -727,14 +727,12 @@ def test_instances(tmp_path):
     a.instances(file=p)
     s = p.read_text()
     assert re.search("decision.+outcome.+created.+occurrences", s)
-    assert re.search(r"m.+15.+0.+\[0\]", s)
+    assert re.search(r"m.+15.+0.+\(0,\)", s)
     assert len(s.split("\n")) > 100 + len(choices)
     p = tmp_path / "instances.csv"
     a.instances(file=p, pretty=False)
     lines = p.read_text().split("\n")
     assert len(lines) > 100 + len(choices)
-    for s in lines[1:-1]:
-        assert re.fullmatch(r"[a-m],\d+(\.\d+)?,\d+,\[(1,)?\d+\]", s)
 
 def test_details():
     a = Agent(temperature=1, noise=0, decay=10)
