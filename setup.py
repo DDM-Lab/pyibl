@@ -21,6 +21,7 @@ setup(name="pyibl",
           "prettytable",
           "ordered_set",
           "pandas",
+          "matplotlib",
           "packaging"]
       tests_require=["pytest"],
       python_requires=">=3.8",

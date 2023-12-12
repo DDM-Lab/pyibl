@@ -20,6 +20,7 @@ import collections.abc as abc
 import csv
 import io
 import math
+import matplotlib.pyplot as plt
 import numbers
 import os
 import pandas as pd
@@ -45,6 +46,8 @@ if version.parse(pyactup.__version__) < version.parse(PYACTUP_MINIMUM_VERSION):
 __all__ = ["Agent", "DelayedResponse",
            "positive_linear_similarity", "positive_quadratic_similarity",
            "bounded_linear_similarity", "bounded_quadratic_similarity"]
+
+LEGEND_LIMIT = 10
 
 SQRT2 = math.sqrt(2)
 AGGREGATE_COLUMNS = tuple(("time,choice,utility,option,blended_value,"
@@ -397,7 +400,7 @@ class Agent:
 
     @property
     def aggregate_details(self):
-        """
+        """ TODO add docstring
         """
         if self._aggregate_details is None:
             return None
@@ -1003,6 +1006,75 @@ class Agent:
             w.writeheader()
             for d in data:
                 w.writerow(d)
+
+    def plot(self, kind, title=None, ylabel=None, options=None, utilities=None,
+             legend=None, limits=None, filename=None, show=None):
+        """ TODO add docstring
+        """
+        # TODO implement the rest of the optional arguments
+        # TODO "choice" needs special handling
+        if show is None:
+            show = filename is None
+        agg = self.aggregate_details
+        if agg is None:
+            raise RuntimeError("Can't make plot unless aggregate_details is set")
+        col, desc, inst = {"choice": ("choice", "Choice", False),
+                           "bv": ("blended_value", "Mean blended value", False),
+                           "probability": ("retrieval_probability", "Mean probability of Retrieval", True),
+                           "activation": ("activation", "Mean Activation", True),
+                           "baselevel": ("base_level_activation", "Mean base level activation", True),
+                           "mismatch": ("mismatch", "Mean total mismatch penalty", True)
+                           }.get(kind)
+        if not col:
+            raise ValueError(f"Unknown plot kind {kind}")
+        if inst:
+            data = Agent._instance_plot_data(agg, col, options, utilities)
+        else:
+            data = Agent._option_plot_data(agg, col, options)
+        for k, (t, v) in data.items():
+            plt.plot(t, v, label=k)
+        if title is None:
+            plt.title(f"{desc} versus time")
+        if legend is None:
+            legend = len(data) <= LEGEND_LIMIT
+        if legend is True:
+            plt.legend()
+        elif legend:
+            plt.legend(legend)
+        if filename:
+            plt.savefig(filename)
+        if show:
+            plt.show()
+        return plt.gcf()
+
+    @staticmethod
+    def _ensure_plot_items(supplied, possibilities, argname):
+        try:
+            if len(s := set(supplied)) < len(supplied):
+                raise ValueError(f"Duplicate {argname} in {supplied}")
+            elif len(s.intersection(possibilities)) < len(s):
+                raise ValueError(f"Unused {argname} in {supplied}")
+        except:
+            raise TypeError(f"{argname} should be a sequence of strings")
+
+    @staticmethod
+    def _option_plot_data(agg, column, options):
+        # TODO allow restricting to specific options
+        result = {}
+        for opt in agg["option"].unique():
+            grouped = agg[agg["option"]==opt].groupby("time")
+            result[opt] = ([t for t, ignore in grouped["time"]],
+                           grouped[column].mean())
+        return result
+
+    def _instance_plot_data(agg, column, options, utilities):
+        # TODO allow restricting to specific options and/or utilities
+        result = {}
+        for opt, util in agg[["option", "utility"]].drop_duplicates().itertuples(index=False, name=None):
+            grouped = agg[(agg["option"]==opt) & (agg["utility"]==util)].groupby("time")
+            result[f"{opt}, {util}"] = ([t for t, ignore in grouped["time"]],
+                                        grouped[column].mean())
+        return result
 
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
