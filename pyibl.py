@@ -401,8 +401,9 @@ class Agent:
     @property
     def aggregate_details(self):
         """ TODO add docstring
-        be sure to note canonicalization of options
+        TODO be sure to note canonicalization of options
         """
+        # TODO when writing unit tests be sure to test both with and without noise
         if self._aggregate_details is None:
             return None
         return pd.DataFrame(self._aggregate_details, columns=AGGREGATE_COLUMNS)
@@ -813,7 +814,7 @@ class Agent:
                                        d["retrieval_probability"],
                                        d["activation"],
                                        d["base_level_activation"],
-                                       d["activation_noise"],
+                                       d.get("activation_noise", 0),
                                        d.get("mismatch", 0)]
                                       for d in history)
                         history = []
@@ -1038,11 +1039,11 @@ class Agent:
             data = Agent._instance_plot_data(agg, col, options, utilities)
             include = [tuple(d.values()) for d in self._make_queries(include)]
             exclude = [tuple(d.values()) for d in self._make_queries(exclude)]
-            # test that min and max, if not None, are real and that min<=max
+            # TODO test that min and max, if not None, are real and that min<=max
         else:
             data = Agent._option_plot_data(agg, col, options)
-        # when matchining against include/exclude each attribute value in that parameter
-        #   that is None (either implicitly or explicitly) should match anything
+        # TODO when matchining against include/exclude each attribute value in that parameter
+        #         that is None (either implicitly or explicitly) should match anything
         for k, (t, v) in data.items():
             plt.plot(t, v, label=k)
         if title is None:
