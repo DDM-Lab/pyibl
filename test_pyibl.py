@@ -334,6 +334,8 @@ def test_populate():
     assert inst["outcome"] == 30 and inst["created"] == 50
     assert a.time == 50
     assert a.choose("uvwx") in "uvwx"
+    with pytest.raises(ValueError):
+        a.populate("uvwx", 1, a.time + 1)
 
 def test_reset():
     a = Agent(default_utility=1, noise=0.37, decay=0.55)

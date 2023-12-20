@@ -401,6 +401,7 @@ class Agent:
     @property
     def aggregate_details(self):
         """ TODO add docstring
+        be sure to note canonicalization of options
         """
         if self._aggregate_details is None:
             return None
@@ -546,7 +547,8 @@ class Agent:
         If provided, *when* should be a time, a dimensionless quantity, typically a count
         of the number of choose/respond cycles that have occurred since the agent was
         created or last :meth:`reset`; providing *time* will cause the instances to be
-        added at that specified time instead of the current time.
+        added at that specified time instead of the current time. The *time* provided
+        may not be in the future.
 
         This is typically used to enable startup of a model by adding instances before the
         first call to :meth:`choose`. When used in this way the timestamp associated with
@@ -571,18 +573,21 @@ class Agent:
         The *when* argument, which if provided should be a time, can be used to add
         instances at other times.
 
-        Raises a :exc:`ValueError` if *outcome* is not a :class:`Real` number, or if any
-        of the *choices* are malformed or duplicates.
+        Raises a :exc:`ValueError` if *outcome* is not a :class:`Real` number, if any of
+        the *choices* are malformed or duplicates, or if *when* is in the future.
 
         .. warning::
             In normal use you should only call :meth:`populate` before any choose/respond
             cycles. If, for exotic purposes, you do wish to call it after, caution should
             be exercised to avoid biologically implausible models. It should not normally
             be necessary to use the *when* argument, which is provided only for esoteric
-            uses. In particular adding instances in the future will usually result in
-            tears as operations such as :meth:`choose` will raise an :exc:`Exception`.
+            uses. In particular instances may not be added in the future, as that would
+            result in tears as operations such as :meth:`choose` will raise
+            an :exc:`Exception`.
         """
         if when is not None:
+            if when > self.time:
+                raise ValueError(f"The when argument ({when}) must not be in the future")
             return self._at_time(when, lambda: self.populate(choices, outcome))
         Agent._outcome_value(outcome)
         for choice in self._make_queries(choices):
@@ -1007,12 +1012,14 @@ class Agent:
             for d in data:
                 w.writerow(d)
 
-    def plot(self, kind, title=None, ylabel=None, options=None, utilities=None,
-             legend=None, limits=None, filename=None, show=None):
+    def plot(self, kind, title=None, ylabel=None, include=None, exclude=None,
+             max=None, min=None, legend=None, limits=None, filename=None, show=None):
         """ TODO add docstring
+        include/exclude apply to options; if they conflict, exclude wins
+        max/min apply to utilities
+        returns figure
         """
         # TODO implement the rest of the optional arguments
-        # TODO "choice" needs special handling
         if show is None:
             show = filename is None
         agg = self.aggregate_details
@@ -1029,8 +1036,13 @@ class Agent:
             raise ValueError(f"Unknown plot kind {kind}")
         if inst:
             data = Agent._instance_plot_data(agg, col, options, utilities)
+            include = [tuple(d.values()) for d in self._make_queries(include)]
+            exclude = [tuple(d.values()) for d in self._make_queries(exclude)]
+            # test that min and max, if not None, are real and that min<=max
         else:
             data = Agent._option_plot_data(agg, col, options)
+        # when matchining against include/exclude each attribute value in that parameter
+        #   that is None (either implicitly or explicitly) should match anything
         for k, (t, v) in data.items():
             plt.plot(t, v, label=k)
         if title is None:
