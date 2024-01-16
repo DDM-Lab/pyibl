@@ -22,6 +22,7 @@ import io
 import math
 import matplotlib.pyplot as plt
 import numbers
+import numpy as np
 import os
 import pandas as pd
 import pyactup
@@ -107,6 +108,7 @@ class Agent:
         self.default_utility_populates = default_utility_populates
         self._details = None
         self._aggregate_details = None
+        self._aggregate_similarities = False
         self._trace = False
         self._fixed_noise = fixed_noise
         self.reset()
@@ -406,7 +408,13 @@ class Agent:
         # TODO when writing unit tests be sure to test both with and without noise
         if self._aggregate_details is None:
             return None
-        return pd.DataFrame(self._aggregate_details, columns=AGGREGATE_COLUMNS)
+        result = pd.DataFrame(self._aggregate_details,
+                              columns=(AGGREGATE_COLUMNS + (tuple(f"{a}.similarity"
+                                                                  for a in self._attributes)
+                                                            if self._aggregate_similarities
+                                                            else [])))
+        result.dropna(axis="columns", how="all", inplace=True)
+        return result
 
     @aggregate_details.setter
     def aggregate_details(self, value):
@@ -414,6 +422,7 @@ class Agent:
             self._aggregate_details = []
         else:
             self._aggregate_details = None
+        self._aggregate_similarities = False
 
     @property
     def trace(self):
@@ -805,8 +814,10 @@ class Agent:
                         if self._trace:
                             self._print_trace(q, u, history)
                         if (ad := self._aggregate_details) is not None:
-                            # cf. the definition of AGGREGATE_COLUMNS near the top of this file
-                            ad.extend([self.time,
+                            for d in history:
+                                # cf. the definition of AGGREGATE_COLUMNS near the top of
+                                #     this file
+                                agg = [self.time,
                                        None,
                                        (att := d["attributes"])[0][1],
                                        tuple(a[1] for a in att[1:]) if self._attributes else att[1][1],
@@ -816,7 +827,10 @@ class Agent:
                                        d["base_level_activation"],
                                        d.get("activation_noise", 0),
                                        d.get("mismatch", 0)]
-                                      for d in history)
+                                if sim := d.get("similarities"):
+                                    self._aggregate_similarities = True
+                                    agg.extend([sim.get(a, np.nan) for a in self._attributes])
+                            ad.append(agg)
                         history = []
                         self._memory.activation_history = history
             if (not self._fixed_noise):
