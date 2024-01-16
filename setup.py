@@ -1,4 +1,4 @@
-# Copyright 2014-2023 Carnegie Mellon University
+# Copyright 2014-2024 Carnegie Mellon University
 
 from setuptools import setup
 from pyibl import __version__
