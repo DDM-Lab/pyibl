@@ -9,6 +9,7 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from math import isclose
+from operator import __eq__
 from pprint import pp
 
 from pyibl import *
@@ -1041,3 +1042,69 @@ def test_index():
     assert set(a._memory.index) == {"x", "y"}
     a.similarity("y x", True)
     assert set(a._memory.index) == set()
+
+def test_aggregate():
+    CARDS = [(n, c) for n in range(1, 5) for c in "ryg"]
+    WINNER = (1, "r")
+    # Note that tiny changes to the code could change the values being asserted.
+    with randomseed():
+        a = Agent(["n", "color"], mismatch_penalty=1)
+        a.populate(CARDS, 3.2)
+        a.similarity(["n"], bounded_linear_similarity(1, 4))
+        a.aggregate_details = True
+        for p in range(100):
+            a.reset(True)
+            succeeded = False
+            for r in range(8):
+                choice = a.choose(CARDS)
+                payoff = int(choice[1] == WINNER[1])
+                if choice[0] == WINNER[0]:
+                    payoff += 2
+                elif abs(choice[0] - WINNER[0]) == 1:
+                    payoff += 1
+                if payoff == 3 and not succeeded:
+                    succeeded = True
+                a.respond(payoff)
+        agg = a.aggregate_details
+        assert agg.shape == (9600, 11)
+        assert (list(agg.columns.values) ==
+                ['time', 'choice', 'utility', 'option', 'blended_value', 'retrieval_probability',
+                 'activation', 'base_level_activation', 'activation_noise', 'mismatch', 'n.similarity'])
+        def compcol(colname, vals, approx=True):
+            assert all(map((isclose if approx else __eq__), random.choices(agg.loc[:, colname], k=12), vals))
+        compcol("time", [8, 1, 1, 7, 1, 4, 8, 4, 6, 5, 1, 1], False)
+        compcol("choice", [(1, 'r'), (4, 'g'), (3, 'y'), (3, 'g'), (2, 'g'), (3, 'g'),
+                           (2, 'g'), (2, 'g'), (1, 'g'), (2, 'r'), (1, 'r'), (1, 'g')],
+                False)
+        compcol("utility", [2.0, 0.0, 3.2, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0, 3.0])
+        compcol("option", [(4, 'g'), (4, 'g'), (4, 'g'), (4, 'y'), (2, 'r'), (3, 'g'),
+                           (4, 'y'), (2, 'r'), (1, 'g'), (4, 'y'), (1, 'r'), (1, 'g')],
+                False)
+        compcol("blended_value",
+                [2.6402049451738896, 1.940816096686568, 3.025656438069006, 2.335665363047616,
+                 2.005121575843439, 2.6980434468261176, 3.1999999999999997, 3.068972819515582,
+                 3.131871655944678, 2.4666357733346214, 1.1916856408953918, 0.6642791283852804])
+        compcol("retrieval_probability",
+                [0.9103543999779486, 0.8927825686881787, 0.01433617596362511, 0.41985353448960394,
+                 0.8122502319805105, 0.09793185905539636, 0.19581639734637896, 0.5826868831502399,
+                 0.23511210491423043, 0.4032904976688127, 0.25726404344346093, 0.012055336269318009])
+        compcol("activation",
+                [-1.2172407495029733, -1.0709507795826438, -0.6115475442005188, -1.3547872115805495,
+                 -0.6746107942863351, -0.5664876549268882, -1.2696795599909447, -0.49090811178663785,
+                 -0.48188501751099, -1.2977298069420078, -1.7782614639505074, 0.03596386361170789])
+        compcol("base_level_activation",
+                [-0.3465735902799726, -0.5493061443340549, -0.3465735902799726, -0.5493061443340549,
+                 -0.5493061443340549, 0.4054651081081644, -0.6931471805599453, 0.4054651081081644,
+                 0.0, -0.5493061443340549, 0.0, 0.0])
+        compcol("activation_noise",
+                [0.2964928453071837, -0.0006303939390253185, -0.006276223142401733, 0.025011786695285646,
+                 -1.0609945972835555, 0.4472626645475213, -0.03674138746771524, 0.4221903810709378,
+                 0.4111103195065815, 0.2750386589832339, -0.31978119043323294, 0.24433358278601347])
+        compcol("mismatch",
+                [-0.6666666666666666, -1.0, -0.33333333333333326, 0.0, 0.0, -1.0, 0.0, -0.6666666666666666,
+                 -0.6666666666666666, -0.33333333333333326, -0.33333333333333326, 0.0])
+        compcol("n.similarity",
+                [0.6666666666666667, 0.6666666666666667, 0.0, 1.0, 0.33333333333333337, 0.0,
+                 0.6666666666666667, 0.33333333333333337, 0.6666666666666667, 0.6666666666666667,
+                 0.33333333333333337, 0.33333333333333337])
+        # TODO Test assorted boundary cases, too.

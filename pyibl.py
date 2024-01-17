@@ -30,6 +30,7 @@ import random
 import sys
 import warnings
 
+from collections import Counter, defaultdict
 from itertools import count
 from numbers import Real
 from packaging import version
@@ -51,9 +52,9 @@ __all__ = ["Agent", "DelayedResponse",
 LEGEND_LIMIT = 10
 
 SQRT2 = math.sqrt(2)
-AGGREGATE_COLUMNS = tuple(("time,choice,utility,option,blended_value,"
+AGGREGATE_COLUMNS = tuple(("iteration,time,choice,utility,option,blended_value,"
                            "retrieval_probability,activation,base_level_activation,"
-                           "activation_noise,mismatch").split(","))
+                           "activation_noise").split(","))
 
 
 class Agent:
@@ -109,6 +110,7 @@ class Agent:
         self._details = None
         self._aggregate_details = None
         self._aggregate_similarities = False
+        self._aggregate_iteration = 0
         self._trace = False
         self._fixed_noise = fixed_noise
         self.reset()
@@ -154,6 +156,7 @@ class Agent:
         self._last_learn_time = 0
         self._previous_choices = None
         self._pending_decision = None
+        self._aggregate_iteration += 1
 
     @property
     def time(self):
@@ -408,11 +411,10 @@ class Agent:
         # TODO when writing unit tests be sure to test both with and without noise
         if self._aggregate_details is None:
             return None
-        result = pd.DataFrame(self._aggregate_details,
-                              columns=(AGGREGATE_COLUMNS + (tuple(f"{a}.similarity"
-                                                                  for a in self._attributes)
-                                                            if self._aggregate_similarities
-                                                            else [])))
+        cols = AGGREGATE_COLUMNS
+        if self._aggregate_similarities:
+            cols += ("mismatch",) + tuple(f"{a}.similarity" for a in self._attributes)
+        result = pd.DataFrame(self._aggregate_details, columns=cols)
         result.dropna(axis="columns", how="all", inplace=True)
         return result
 
@@ -423,6 +425,7 @@ class Agent:
         else:
             self._aggregate_details = None
         self._aggregate_similarities = False
+        self._aggregate_iteration = 0
 
     @property
     def trace(self):
@@ -817,7 +820,8 @@ class Agent:
                             for d in history:
                                 # cf. the definition of AGGREGATE_COLUMNS near the top of
                                 #     this file
-                                agg = [self.time,
+                                agg = [self._aggregate_iteration,
+                                       self.time,
                                        None,
                                        (att := d["attributes"])[0][1],
                                        tuple(a[1] for a in att[1:]) if self._attributes else att[1][1],
@@ -825,10 +829,10 @@ class Agent:
                                        d["retrieval_probability"],
                                        d["activation"],
                                        d["base_level_activation"],
-                                       d.get("activation_noise", 0),
-                                       d.get("mismatch", 0)]
+                                       d.get("activation_noise", 0)]
                                 if sim := d.get("similarities"):
                                     self._aggregate_similarities = True
+                                    agg.append(d.get("mismatch", 0))
                                     agg.extend([sim.get(a, np.nan) for a in self._attributes])
                             ad.append(agg)
                         history = []
@@ -856,7 +860,7 @@ class Agent:
         self._pending_decision = (best, choices, queries, utilities)
         if agg_len is not None:
             for v in self._aggregate_details[agg_len:]:
-                v[1] = tuple(queries[best].values()) if self._attributes else queries[best]["_decision"]
+                v[2] = tuple(queries[best].values()) if self._attributes else queries[best]["_decision"]
         result = choices[best]
         if details:
             return result, sorted(({"choice": c,
@@ -1027,47 +1031,59 @@ class Agent:
             for d in data:
                 w.writerow(d)
 
-    def plot(self, kind, title=None, ylabel=None, include=None, exclude=None,
-             max=None, min=None, legend=None, limits=None, filename=None, show=None):
+    # TODO maybe add earliest and latest?
+    def plot(self, kind, title=None, xlabel=None, ylabel=None,
+             include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
+             legend=None, limits=None, filename=None, show=None):
         """ TODO add docstring
-        include/exclude apply to options; if they conflict, exclude wins
-        max/min apply to utilities
-        returns figure
         """
-        # TODO implement the rest of the optional arguments
+        if min and not isinstance(min, numbers.Real):
+            raise ValueError("The min value, {min}, is neither a Real number nor None")
+        if max and not isinstance(max, numbers.Real):
+            raise ValueError("The max value, {max}, is neither a Real number nor None")
+        # if min and max and min > max:
+        #     raise ValueError("The min value, {min}, is greater than the max value, {max}")
         if show is None:
             show = filename is None
         agg = self.aggregate_details
         if agg is None:
             raise RuntimeError("Can't make plot unless aggregate_details is set")
-        col, desc, inst = {"choice": ("choice", "Choice", False),
-                           "bv": ("blended_value", "Mean blended value", False),
-                           "probability": ("retrieval_probability", "Mean probability of Retrieval", True),
-                           "activation": ("activation", "Mean Activation", True),
-                           "baselevel": ("base_level_activation", "Mean base level activation", True),
-                           "mismatch": ("mismatch", "Mean total mismatch penalty", True)
-                           }.get(kind)
-        if not col:
-            raise ValueError(f"Unknown plot kind {kind}")
-        if inst:
-            data = Agent._instance_plot_data(agg, col, options, utilities)
-            include = [tuple(d.values()) for d in self._make_queries(include)]
-            exclude = [tuple(d.values()) for d in self._make_queries(exclude)]
-            # TODO test that min and max, if not None, are real and that min<=max
-        else:
-            data = Agent._option_plot_data(agg, col, options)
-        # TODO when matchining against include/exclude each attribute value in that parameter
-        #         that is None (either implicitly or explicitly) should match anything
+        plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", (-0.05, 1.05)),
+                     "bv":          OptionPlot("blended_value", "Mean blended value"),
+                     "probability": InstancePlot("retrieval_probability",
+                                                 "Mean probability of retrieval", (-0.05, 1.05)),
+                     "activation":  InstancePlot("activation", "Mean total activation"),
+                     "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
+                     "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
+                     }.get(kind)
+        if not plot_kind:
+            if isinstance(kind, str) and kind.endswith(".similarity"):
+                if kind in agg:
+                    plot_kind = InstancePlot(kind, f"Mean similarities of {kind[0:-11]}")
+                else:
+                    raise ValueError(f"The {kind[0:-11]} attribute is either absent or not partially matched")
+            else:
+                raise ValueError(f"Unknown plot kind {kind}")
+        if kind == "mismatch" and "mismatch" not in agg:
+            raise ValueError("Can't generate a mismatch plot when no attributes were partially matched")
+        data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
         for k, (t, v) in data.items():
             plt.plot(t, v, label=k)
-        if title is None:
-            plt.title(f"{desc} versus time")
-        if legend is None:
-            legend = len(data) <= LEGEND_LIMIT
-        if legend is True:
-            plt.legend()
-        elif legend:
-            plt.legend(legend)
+        if data:
+            if title is not False:
+                plt.title(title or f"{plot_kind._description} versus time")
+                if legend is None:
+                    legend = len(data) <= LEGEND_LIMIT
+                    if legend is True:
+                        plt.legend()
+                    elif legend:
+                        plt.legend(legend)
+        plt.xlabel(xlabel or "Time")
+        plt.ylabel(ylabel or plot_kind._description)
+        if limits:
+            plt.ylim(limits)
+        elif plot_kind._default_ylim:
+            plt.ylim(plot_kind._default_ylim)
         if filename:
             plt.savefig(filename)
         if show:
@@ -1083,25 +1099,6 @@ class Agent:
                 raise ValueError(f"Unused {argname} in {supplied}")
         except:
             raise TypeError(f"{argname} should be a sequence of strings")
-
-    @staticmethod
-    def _option_plot_data(agg, column, options):
-        # TODO allow restricting to specific options
-        result = {}
-        for opt in agg["option"].unique():
-            grouped = agg[agg["option"]==opt].groupby("time")
-            result[opt] = ([t for t, ignore in grouped["time"]],
-                           grouped[column].mean())
-        return result
-
-    def _instance_plot_data(agg, column, options, utilities):
-        # TODO allow restricting to specific options and/or utilities
-        result = {}
-        for opt, util in agg[["option", "utility"]].drop_duplicates().itertuples(index=False, name=None):
-            grouped = agg[(agg["option"]==opt) & (agg["utility"]==util)].groupby("time")
-            result[f"{opt}, {util}"] = ([t for t, ignore in grouped["time"]],
-                                        grouped[column].mean())
-        return result
 
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
@@ -1160,6 +1157,101 @@ class Agent:
             self._memory.index = self._preferred_index()
         except RuntimeError:
             pass
+
+
+class Plot():
+
+    def __init__(self, column, description, default_ylim=None):
+        self._column = column
+        self._description = description
+        self._default_ylim = default_ylim
+
+    def get_data(self, data, include, exclude, min, max):
+        raise NotImplementedError()
+
+
+class ChoicePlot(Plot):
+    def __init__(self, column, description, default_ylim=None):
+        super().__init__(column, description, default_ylim)
+
+    def get_data(self, data, include, exclude, min, max, earliest, latest):
+        counters = {}
+        sums = defaultdict(int)
+        times = set()
+        for ch in data.choice.unique():
+            d = data[data.choice==ch]
+            if earliest is not None:
+                d = d[d.time >= earliest]
+            if latest is not None:
+                d = d[d.time <= latest]
+            grouped = d.groupby(["iteration", "time"])
+            # There's probably a better way to do this within Pandas, right?
+            cnt = Counter([t for (i, t), ignore in grouped[["iteration", "time"]]])
+            times.update(cnt.keys())
+            for k in cnt:
+                sums[k] += cnt[k]
+            counters[ch] = cnt
+        result = {}
+        for ch, cnt in counters.items():
+            if include and ch not in include:
+                continue
+            if exclude and ch in exclude:
+                continue
+            for k, v in cnt.items():
+                cnt[k] /= sums[k]
+            for t in times:
+                if t not in cnt:
+                    cnt[t] = 0
+            result[ch] = tuple(zip(*sorted(cnt.items())))
+        return result
+
+
+class OptionPlot(Plot):
+    def __init__(self, column, description, default_ylim=None):
+        super().__init__(column, description, default_ylim)
+
+    def get_data(self, data, include, exclude, min, max, earliest, latest):
+        result = {}
+        for opt in data.option.unique():
+            if include and opt not in include:
+                continue
+            if exclude and opt in exclude:
+                continue
+            d = data[(data.option==opt)]
+            if earliest is not None:
+                d = d[d.time >= earliest]
+            if latest is not None:
+                d = d[d.time <= latest]
+            grouped = d.groupby("time")
+            result[opt] = ([t for t, ignore in grouped["time"]],
+                           grouped[self._column].mean())
+        return result
+
+
+class InstancePlot(Plot):
+    def __init__(self, column, description, default_ylim=None):
+        super().__init__(column, description, default_ylim)
+
+    def get_data(self, data, include, exclude, min, max, earliest, latest):
+        result = {}
+        for opt, util in data[["option", "utility"]].drop_duplicates().itertuples(index=False, name=None):
+            if include and opt not in include:
+                continue
+            if exclude and opt in exclude:
+                continue
+            if min and util < min:
+                continue
+            if max and util > max:
+                continue
+            d = data[(data.option==opt) & (data.utility==util)]
+            if earliest is not None:
+                d = d[d.time >= earliest]
+            if latest is not None:
+                d = d[d.time <= latest]
+            grouped = d.groupby("time")
+            result[f"{opt}, {util}"] = ([t for t, ignore in grouped["time"]],
+                                        grouped[self._column].mean())
+        return result
 
 
 class DelayedResponse:
