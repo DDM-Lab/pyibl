@@ -1031,7 +1031,6 @@ class Agent:
             for d in data:
                 w.writerow(d)
 
-    # TODO maybe add earliest and latest?
     def plot(self, kind, title=None, xlabel=None, ylabel=None,
              include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
              legend=None, limits=None, filename=None, show=None):
