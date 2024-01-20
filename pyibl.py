@@ -1048,10 +1048,10 @@ class Agent:
         agg = self.aggregate_details
         if agg is None:
             raise RuntimeError("Can't make plot unless aggregate_details is set")
-        plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", (-0.05, 1.05)),
+        plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", True),
                      "bv":          OptionPlot("blended_value", "Mean blended value"),
                      "probability": InstancePlot("retrieval_probability",
-                                                 "Mean probability of retrieval", (-0.05, 1.05)),
+                                                 "Mean probability of retrieval", True),
                      "activation":  InstancePlot("activation", "Mean total activation"),
                      "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
                      "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
@@ -1059,7 +1059,7 @@ class Agent:
         if not plot_kind:
             if isinstance(kind, str) and kind.endswith(".similarity"):
                 if kind in agg:
-                    plot_kind = InstancePlot(kind, f"Mean similarities of {kind[0:-11]}")
+                    plot_kind = InstancePlot(kind, f"Mean similarities of {kind[0:-11]}",  True)
                 else:
                     raise ValueError(f"The {kind[0:-11]} attribute is either absent or not partially matched")
             else:
@@ -1067,19 +1067,19 @@ class Agent:
         if kind == "mismatch" and "mismatch" not in agg:
             raise ValueError("Can't generate a mismatch plot when no attributes were partially matched")
         data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
+        plt.clf()
         for k, (t, v) in data.items():
             plt.plot(t, v, label=k)
-        if data:
-            if title is not False:
-                plt.title(title or f"{plot_kind._description} versus time")
-                if legend is None:
-                    legend = len(data) <= LEGEND_LIMIT
-                    if legend is True:
-                        plt.legend()
-                    elif legend:
-                        plt.legend(legend)
-        plt.xlabel(xlabel or "Time")
-        plt.ylabel(ylabel or plot_kind._description)
+        if title is not False:
+            plt.title(title or f"{plot_kind._description} versus time")
+        if legend is None:
+            legend = data and (len(data) <= LEGEND_LIMIT)
+        if legend is True:
+            plt.legend()
+        elif legend:
+            plt.legend(legend)
+        plt.xlabel(xlabel if xlabel is not None else "Time")
+        plt.ylabel(ylabel if ylabel is not None else  plot_kind._description)
         if limits:
             plt.ylim(limits)
         elif plot_kind._default_ylim:
@@ -1161,18 +1161,18 @@ class Agent:
 
 class Plot():
 
-    def __init__(self, column, description, default_ylim=None):
+    def __init__(self, column, description, limit_range=False):
         self._column = column
         self._description = description
-        self._default_ylim = default_ylim
+        self._default_ylim = (-0.05, 1.05) if limit_range else None
 
     def get_data(self, data, include, exclude, min, max):
         raise NotImplementedError()
 
 
 class ChoicePlot(Plot):
-    def __init__(self, column, description, default_ylim=None):
-        super().__init__(column, description, default_ylim)
+    def __init__(self, column, description, limit_range=False):
+        super().__init__(column, description, limit_range)
 
     def get_data(self, data, include, exclude, min, max, earliest, latest):
         counters = {}
@@ -1207,8 +1207,8 @@ class ChoicePlot(Plot):
 
 
 class OptionPlot(Plot):
-    def __init__(self, column, description, default_ylim=None):
-        super().__init__(column, description, default_ylim)
+    def __init__(self, column, description, limit_range=False):
+        super().__init__(column, description, limit_range)
 
     def get_data(self, data, include, exclude, min, max, earliest, latest):
         result = {}
@@ -1229,8 +1229,8 @@ class OptionPlot(Plot):
 
 
 class InstancePlot(Plot):
-    def __init__(self, column, description, default_ylim=None):
-        super().__init__(column, description, default_ylim)
+    def __init__(self, column, description, limit_range=False):
+        super().__init__(column, description, limit_range)
 
     def get_data(self, data, include, exclude, min, max, earliest, latest):
         result = {}

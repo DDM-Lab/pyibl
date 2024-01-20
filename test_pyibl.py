@@ -1066,9 +1066,9 @@ def test_aggregate():
                     succeeded = True
                 a.respond(payoff)
         agg = a.aggregate_details
-        assert agg.shape == (9600, 11)
+        assert agg.shape == (9600, 12)
         assert (list(agg.columns.values) ==
-                ['time', 'choice', 'utility', 'option', 'blended_value', 'retrieval_probability',
+                ['iteration', 'time', 'choice', 'utility', 'option', 'blended_value', 'retrieval_probability',
                  'activation', 'base_level_activation', 'activation_noise', 'mismatch', 'n.similarity'])
         def compcol(colname, vals, approx=True):
             assert all(map((isclose if approx else __eq__), random.choices(agg.loc[:, colname], k=12), vals))
@@ -1108,3 +1108,60 @@ def test_aggregate():
                  0.6666666666666667, 0.33333333333333337, 0.6666666666666667, 0.6666666666666667,
                  0.33333333333333337, 0.33333333333333337])
         # TODO Test assorted boundary cases, too.
+
+def test_plot():
+    def run_model(agent):
+        agent.populate("s,r", 3.2)
+        for p in range(100):
+            agent.reset(True)
+            for r in range(50):
+                choice = agent.choose(["s", "r"])
+                if choice == "r":
+                    agent.respond(3 if random.random() < 1/4 else 0)
+                else:
+                    agent.respond(1)
+    a = Agent()
+    run_model(a)
+    with pytest.raises(RuntimeError):
+        a.plot("choice")
+    a = Agent()
+    a.aggregate_details = True
+    run_model(a)
+    a.plot("choice", filename="plots/choice.png")
+    a.plot("choice", filename="plots/risky.png", exclude=["s"], title="Fraction choosing risky", earliest=3)
+    a.plot("bv", filename="plots/bv.png", max=3)
+    a.plot("probability", filename="plots/probability.png")
+    a.plot("probability", filename="plots/safe_prob.png", exclude=["s", "not present"], earliest=3)
+    a.plot("activation", filename="plots/activation.png", latest=40)
+    a.plot("baselevel", filename="plots/baselevel.png", include=["r", "not present"], limits=(-1, 1))
+    a.plot("baselevel", filename="plots/empty.png", max=2.5, min=2.5)
+
+    def sim(x, y):
+        return 1 - abs(x - y) / 8
+    OPTIONS = [("black", 2), ("black", 4), ("black", 6), ("black", 8),("black", 10),
+               ("gold", 1), ("gold", 3), ("gold", 5), ("gold", 7), ("gold", 9)]
+    a = Agent("c,n", mismatch_penalty=1)
+    a.similarity(["n"], sim)
+    a.populate(OPTIONS, 150)
+    a.aggregate_details = True
+    for p in range(80):
+        a.reset(True)
+        options = list(OPTIONS)
+        for r in range(40):
+            choice = a.choose(options)
+            if choice[0] == "black":
+                a.respond(choice[1]**2 + (2 if random.random() < 0.3 else -2))
+            else:
+                a.respond(100 - choice[1]**2 + (3 if random.random() < 0.7 else -3))
+            if round(r + p / 40) % 7 == 0:
+                options.pop()
+    a.plot("choice", filename="plots/pm_choice.png")
+    a.plot("bv", max=140, legend=False, filename="plots/pm_bv.png")
+    a.plot("mismatch", min=90, max=140, filename="plots/pm_mismatch.png")
+    a.plot("n.similarity", filename="plots/pm_similarity.png")
+    with pytest.raises(ValueError):
+        a.plot("c.similarity")
+    with pytest.raises(ValueError):
+        a.plot("foo")
+    with pytest.raises(ValueError):
+        a.plot("")
