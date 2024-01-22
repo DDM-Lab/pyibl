@@ -1051,6 +1051,7 @@ def test_aggregate():
         a = Agent(["n", "color"], mismatch_penalty=1)
         a.populate(CARDS, 3.2)
         a.similarity(["n"], bounded_linear_similarity(1, 4))
+        assert a.aggregate_details is None
         a.aggregate_details = True
         for p in range(100):
             a.reset(True)
@@ -1108,6 +1109,112 @@ def test_aggregate():
                  0.6666666666666667, 0.33333333333333337, 0.6666666666666667, 0.6666666666666667,
                  0.33333333333333337, 0.33333333333333337])
         # TODO Test assorted boundary cases, too.
+    last_rand = 0
+    def rand2(reset=False):
+        global last_rand
+        if reset:
+            last_rand = 0
+            last_rand = (19 * last_rand + 3) % (3 * 19 + 1)
+            return last_rand % 2
+    def cmp(v1, v2):
+        v1 = list(v1)
+        v2 = list(v2)
+        assert len(v1) == len(v2)
+        for x, y in zip(v1, v2):
+            assert isclose(x, y)
+    def deterministic_model(n, **params):
+        rand2(True)
+        agent = Agent(temperature=1, noise=0, **params)
+        agent.aggregate_details = True
+        for p in range(3):
+            agent.reset()
+            if not params.get("default_utility"):
+                agent.populate(["s"], 2.2)
+            agent.populate(["r"], 2.201)
+            for r in range(6 - p):
+                if agent.choose(["s", "r"]) == "s":
+                    agent.respond(1)
+                else:
+                    agent.respond(2 if rand2() else 0)
+        agg = agent.aggregate_details
+        assert agg.shape == (n, 10)
+        cmp(agg["activation_noise"], [0]*n)
+        cmp(agg["activation"], agg["base_level_activation"])
+        return agent
+    a = deterministic_model(30)
+    agg = a.aggregate_details
+    assert list(agg["iteration"]) == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,
+                                      2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+    assert list(agg["time"]) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 1, 1, 2, 2,
+                                 3, 3, 4, 4, 5, 5, 1, 1, 2, 2, 3, 3, 4, 4]
+    assert list(agg["choice"]) == ['r', 'r', 's', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   's', 'r', 'r', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   'r', 'r', 's', 's', 's', 's', 's', 's']
+    cmp(agg["retrieval_probability"],
+        [1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 0.872130921309372, 0.5227744249483388,
+         1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 1.0, 1.0, 1.0, 0.585786437626905,
+         0.6339745962155614, 0.550510257216822, 0.7734590803390136, 0.5358983848622454])
+    a = deterministic_model(30, mismatch_penalty=1.5)
+    agg = a.aggregate_details
+    assert list(agg["iteration"]) == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,
+                                      2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+    assert list(agg["time"]) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 1, 1, 2, 2,
+                                 3, 3, 4, 4, 5, 5, 1, 1, 2, 2, 3, 3, 4, 4]
+    assert list(agg["choice"]) == ['r', 'r', 's', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   's', 'r', 'r', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   'r', 'r', 's', 's', 's', 's', 's', 's']
+    cmp(agg["retrieval_probability"],
+        [1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 0.872130921309372, 0.5227744249483388,
+         1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 1.0, 1.0, 1.0, 0.585786437626905,
+         0.6339745962155614, 0.550510257216822, 0.7734590803390136, 0.5358983848622454])
+    a = deterministic_model(27, default_utility=2.2, default_utility_populates=True)
+    agg = a.aggregate_details
+    cmp(agg["retrieval_probability"],
+        [1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 0.872130921309372, 0.5227744249483388,
+         1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.550510257216822, 0.7734590803390136,
+         0.5358983848622454, 0.8362856824723383, 0.5278640450004206, 1.0, 1.0, 0.585786437626905,
+         0.6339745962155614, 0.550510257216822, 0.7734590803390136, 0.5358983848622454])
+    a = deterministic_model(24, default_utility=2.2, default_utility_populates=False)
+    agg = a.aggregate_details
+    cmp(agg["retrieval_probability"],
+        [1.0, 0.585786437626905, 1.0, 0.550510257216822, 1.0, 0.5358983848622454, 1.0, 0.7703315154878356,
+         1.0, 0.7387325760164007, 1.0, 0.585786437626905, 1.0, 0.550510257216822, 1.0, 0.5358983848622454,
+         1.0, 0.7703315154878356, 1.0, 0.585786437626905, 1.0, 0.550510257216822, 1.0, 0.5358983848622454])
+    a = deterministic_model(30, optimized_learning=True)
+    agg = a.aggregate_details
+    assert list(agg["iteration"]) == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,
+                                      2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+    assert list(agg["time"]) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 1, 1, 2, 2,
+                                 3, 3, 4, 4, 5, 5, 1, 1, 2, 2, 3, 3, 4, 4]
+    assert list(agg["choice"]) == ['r', 'r', 's', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   's', 'r', 'r', 's', 's', 's', 's', 's', 's', 's', 's',
+                                   'r', 'r', 's', 's', 's', 's', 's', 's']
+    cmp(agg["retrieval_probability"],
+        [1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.5505102572168219, 0.7387961250362586,
+         0.5358983848622454, 0.7947869038423273, 0.5278640450004206, 0.8304791528014627, 0.5227744249483388,
+         1.0, 1.0, 1.0, 0.585786437626905, 0.6339745962155614, 0.5505102572168219, 0.7387961250362586,
+         0.5358983848622454, 0.7947869038423273, 0.5278640450004206, 1.0, 1.0, 1.0, 0.585786437626905,
+         0.6339745962155614, 0.5505102572168219, 0.7387961250362586, 0.5358983848622454])
+    assert a.aggregate_details is not agg
+    a.choose(["s", "r"])
+    assert a.aggregate_details.shape == (32, 10)
+    a.aggregate_details = True
+    assert a.aggregate_details.empty
+    a.populate(["s"], 2.2)
+    a.populate(["r"], 2.201)
+    assert a.aggregate_details.empty
+    a.reset()
+    a.populate(["s", "r"], 2.2)
+    for r in range(3):
+        a.choose(["s", "r"])
+        a.respond(2)
+    assert a.aggregate_details.shape == (6, 10)
+
 
 def test_plot():
     def run_model(agent):

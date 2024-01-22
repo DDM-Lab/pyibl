@@ -408,7 +408,6 @@ class Agent:
         """ TODO add docstring
         TODO be sure to note canonicalization of options
         """
-        # TODO when writing unit tests be sure to test both with and without noise
         if self._aggregate_details is None:
             return None
         cols = AGGREGATE_COLUMNS
@@ -817,6 +816,7 @@ class Agent:
                         if self._trace:
                             self._print_trace(q, u, history)
                         if (ad := self._aggregate_details) is not None:
+                            agg = None
                             for d in history:
                                 # cf. the definition of AGGREGATE_COLUMNS near the top of
                                 #     this file
@@ -834,7 +834,8 @@ class Agent:
                                     self._aggregate_similarities = True
                                     agg.append(d.get("mismatch", 0))
                                     agg.extend([sim.get(a, np.nan) for a in self._attributes])
-                            ad.append(agg)
+                            if agg is not None:
+                                ad.append(agg)
                         history = []
                         self._memory.activation_history = history
             if (not self._fixed_noise):
