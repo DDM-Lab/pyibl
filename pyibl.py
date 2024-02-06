@@ -1139,14 +1139,110 @@ class Agent:
     def plot(self, kind, title=None, xlabel=None, ylabel=None,
              include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
              legend=None, limits=None, filename=None, show=None):
-        """ TODO add docstring
+        """Generates a variety of plots of the evolution of this Agent's state over time.
+        These plots can often be helpful in understanding how a PyIBL model is working.
+        To generate these plots :attr:`aggregate_details` must be set to ``True``. The
+        constraints on the model for producing useful :attr:`aggregate_details` similarly
+        apply for producing useful plots. Note that these plots are of values averaged
+        over all the virtual participants. The *kind* argument to :meth:`plot` should be
+        a string, one of the following
+
+        ``"choice"``
+            a plot of the number of times various choices are made by the model as a
+            function of time
+
+        ``"bv"``
+            a plot of the blended values of the options considered as a function of time
+
+        ``"probability"``
+            a plot of the probabilities of retrieval of the various instances as a function
+            of time
+
+        ``"activation"``
+            a plot of the activations of the various instances as a function of time
+
+        ``"baselevel"``
+            a plot of the base level term in the activation computations of the various
+            instances as a function of time
+
+        ``"mismatch"``
+            the total mismatch penalty terms in the activation computations of the various
+            instances as a function of time
+
+        In addition, the *kind* may be a string comprised of the name of an attribute
+        concatenated with ``".similarity"``, which will produce a plot of the average
+        similarity value of this attribute's value to that sought as a function of time.
+
+        Whether or not the plot is displayed and/or saved to a file can be specified with
+        the optional arguments *show* (a Boolean) and *filename* (a string). If *show* is
+        not provided, by default the file will be displayed if and only if no *filename* is
+        provided. In addition the plot is always returned by this method as a
+        `matplotlib Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html>`_.
+
+        Details of the plot can be manipulated with several other optional arguments to
+        :meth:`plot`:
+
+        *title*
+            the title applied to the plot
+
+        *xlabel* and *ylabel*
+            the labels of the corresponding axes of the plot
+
+        *include*and *exclude*
+            these should be lists of options; if *include* is provided only options in
+            this list are displayed; any options in *exclude* are not displayed; if an
+            option appears in both lists it is not displayed
+
+        *min* and *max*
+            these should be Real numbers; if *min* is supplied only results for instances
+            with a utility greater or equal to this value are displayed; if *max* is
+            supplied only results for instances with a utility less than or equal to this
+            value are displayed
+
+        *earliest* and *latest*
+            these should be Real numbers; if *earliest* is supplied only results at this
+            time or later are displayed; if *latest* is supplied only results at this time
+            or earlier are displayed
+
+        *legend*
+            if ``True`` a legend is displayed on the plot; if ``False`` no legend is
+            displayed; other values can also be supplied, which are passed on to
+            `matplotlib <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_;
+            by default a legend is shown only if there are not so many items in the plot
+            that the legend would likely overflow the available space
+
+        *limits*
+            this should be a list or tuple of two Real numbers, the smallest and greatest
+            values of the Y axis of the plot; if not supplied suitable defaults are
+            assumed
+
+        Since :meth:`plot` always returns a Figure, more sophisticated manipulations can
+        be made of it and the result displayed explicitly.
+
+        >>> a = Agent()
+        >>> a.aggregate_details = True
+        >>> a.populate(["a", "b", "c"], 3.2)
+        >>> for participant in range(1000):
+                a.reset(True)
+                for round in range(100):
+                    choice = a.choose(["a", "b", "c"])
+                    if choice == "a":
+                        a.respond(1)
+                    elif choice == "b":
+                        a.respond(2 if random.random() < 1/2 else 0)
+                    elif a.time <= 50:
+                        a.respond(3 if random.random() < 1/3 else 0)
+                    else:
+                        a.respond(3 if random.random() < 2/3 else 0)
+        >>> a.plot("bv")
+
+        .. image:: bv_plot.png
+
         """
         if min and not isinstance(min, numbers.Real):
             raise ValueError("The min value, {min}, is neither a Real number nor None")
         if max and not isinstance(max, numbers.Real):
             raise ValueError("The max value, {max}, is neither a Real number nor None")
-        # if min and max and min > max:
-        #     raise ValueError("The min value, {min}, is greater than the max value, {max}")
         if show is None:
             show = filename is None
         agg = self.aggregate_details

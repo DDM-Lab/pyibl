@@ -949,15 +949,21 @@ the  blended value, *BV*, is then
 Changes to PyIBL
 ================
 
+Changes between versions 5.0.4 and 5.1
+--------------------------------------
+
+* Add the :attr:`aggregate_details` attribute.
+* Add the :meth:`plot` method.
+
 Changes between versions 5.0.2 and 5.0.4
 ----------------------------------------
 
-* the sequence of all attribute names is now a tuple of strings rather than a list
+* The sequence of all attribute names is now a tuple of strings rather than a list.
 
 Changes between versions 5.0.1 and 5.0.3
 ----------------------------------------
 
-* Add further information to trace output
+* Add further information to trace output.
 * Update some copyrights and documentation.
 
 Changes between versions 5.0 and 5.0.1
