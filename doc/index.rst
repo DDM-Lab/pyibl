@@ -1097,7 +1097,7 @@ Changes between versions 2.0 and 3.0
 
   .. warning::
       Note that version 3.0 was never publicly released though
-      preliminary internal development versions of it it were used for a
+      preliminary internal development versions of it were used for a
       variety of experiments, both within the DDMLab and elsewhere.
 
 Changes between versions 1.0 and 2.0
