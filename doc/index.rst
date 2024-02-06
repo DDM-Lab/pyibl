@@ -793,13 +793,17 @@ Reference
 
    .. autoattribute:: optimized_learning
 
+   .. automethod:: discrete_blend
+
    .. automethod:: instances
 
    .. autoattribute:: details
 
    .. autoattribute:: trace
 
-   .. automethod:: discrete_blend
+   .. autoattribute:: aggregate_details
+
+   .. automethod:: plot
 
    .. autoattribute:: fixed_noise
 

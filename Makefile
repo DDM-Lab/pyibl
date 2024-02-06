@@ -1,11 +1,13 @@
-.PHONY: dist clean upload test
+.PHONY: dist clean upload test doc
 
-dist:	clean test
-	python -m build -n
-	cd doc/ ; make html
+dist:	clean test doc
+	python setup.py sdist bdist_wheel
 
 clean:
 	rm -rf dist/*
+
+doc:
+	cd doc/ ; make html
 
 upload: dist
 	twine upload dist/*

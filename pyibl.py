@@ -405,8 +405,112 @@ class Agent:
 
     @property
     def aggregate_details(self):
-        """ TODO add docstring
-        TODO be sure to note canonicalization of options
+        """A Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ aggregating information about the computations performed by this Agent.
+        Set to ``True`` to begin aggregating information, or to ``False`` (the default) to
+        not collect this information. If already collecting information setting this to
+        ``True`` will clear the already gathered information and start over.
+
+        This collecting of information is most useful if the Agent is used in a common
+        pattern: a number of rounds of a task are performed, each round a choose/respond
+        cycle, and this sequence of rounds is repeated over a number of distinct, virtual
+        participants, :meth:`reset` being called between each participant.
+
+        Each row of the resulting DataFrame corresponds to the state of one of the
+        instances in the Agent at a particular time for a particular virtual participant.
+        The columns in the DataFrame are
+
+        ``iteration``
+            the number of times :meth:`reset` has been called before recording the data in
+            this row, which is typically an identifier for the virtual participant
+
+        ``time``
+            the :attr:`time` in this Agent at which the data in this row was recorded,
+            typically the round of the task
+
+        ``choice``
+            the choice made in this round; if this Agent has attributes, the choice will
+            be a tuple containing the values of the attributes in the order in which the
+            attributes were declared when creating the Agent
+
+        ``utility``
+            the utility in this instance
+
+        ``option``
+            the option in this instance; note that this typically differs from the choice
+            column as the choice is the choice made at this time while the option is the
+            option in this instance, whether or not this instance contributed to the
+            "winning" choice; however, as with choice, if the Agent was defined to have
+            attributes the value in this column will be a tuple listing the values of
+            those attributes in the order provided when the Agent was defined
+
+        ``blended_value``
+            the blended value computed for the option in this instance at this time; note
+            that the same blended value is reported for each row corresponding to an
+            instance with the same option at the same time and iteration
+
+        ``retrieval_probability``
+            the probability of retrieval of this instance at this time
+
+        ``activation``
+            the activation of this instance at this time
+
+        ``base_level_activation``
+            the base level term of the activation computation at this time
+
+        ``activation_noise``
+            the noise term of  the activation computation at this time
+
+        If partial matching was used at least once in this Agent since the aggregate
+        details started being record there will be additional columns following those
+        above. The first, ``mismatch``, is the total mismatch penalty for this instance
+        for this query. After this there is one column for each attribute that was
+        partially matched, the similarity value computed for this attribute.
+
+        Note that each time the ``aggregate_details`` attribute is queried a new DataFrame
+        is created from an internal data structure. If you wish to modify a DataFrame and
+        have those changes retained you need to retain this DataFrame.
+
+        .. warning::
+            Collecting ``aggregate_details`` incurs costs, both in space and time, and for
+            large, complex models some thought may be needed to balance these costs
+            against the value and convenience of the results.
+
+        >>> a = Agent()
+        >>> a.aggregate_details = True
+        >>> a.populate(["a", "b"], 2.2)
+        >>> for participant in range(100):
+                a.reset(True)
+                for round in range(60):
+                    choice = a.choose(["a", "b"])
+                    if choice == "a":
+                        a.respond(1)
+                    else:
+                        a.respond(2 if random.random() < 0.5 else 0)
+        >>> a.aggregate_details
+               iteration  time choice  utility option  blended_value  retrieval_probability  activation  base_level_activation  activation_noise
+        0              1     1      a      2.2      a       2.200000               1.000000    0.091998               0.000000          0.091998
+        1              1     1      a      2.2      b       2.200000               1.000000   -0.233124               0.000000         -0.233124
+        2              1     2      b      1.0      a       1.479895               0.600088   -0.390199               0.000000         -0.390199
+        3              1     2      b      2.2      b       2.200000               1.000000    0.185066              -0.346574          0.531639
+        4              1     3      b      1.0      a       1.261019               0.782484   -0.352501              -0.346574         -0.005927
+        5              1     3      b      2.0      b       2.004449               0.977755    0.321220               0.000000          0.321220
+        6              1     4      b      1.0      a       1.026956               0.977537   -0.250698              -0.549306          0.298608
+        7              1     4      b      2.0      b       2.010839               0.945803    0.507820               0.534800         -0.026980
+        8              1     5      b      1.0      a       1.053339               0.955551    0.111650              -0.693147          0.804797
+        9              1     5      b      0.0      b       1.662770               0.169062   -0.211333               0.000000         -0.211333
+        ...          ...   ...    ...      ...    ...            ...                    ...         ...                    ...               ...
+        11990        100    56      b      1.0      a       1.000052               0.999956    2.261437               2.175180          0.086257
+        11991        100    56      b      2.0      b       1.366890               0.683311    0.762205               0.813690         -0.051485
+        11992        100    57      a      1.0      a       1.000002               0.999998    2.427721               2.088158          0.339563
+        11993        100    57      a      2.0      b       0.422011               0.210943    0.814716               0.783826          0.030889
+        11994        100    58      b      1.0      a       1.000018               0.999985    2.148301               2.153508         -0.005207
+        11995        100    58      b      2.0      b       1.733465               0.866600    1.085368               0.756193          0.329175
+        11996        100    59      b      1.0      a       1.000011               0.999991    2.089526               2.077563          0.011963
+        11997        100    59      b      2.0      b       1.246271               0.623060    1.708573               0.730428          0.978145
+        11998        100    60      b      1.0      a       1.000004               0.999996    2.318136               2.026204          0.291932
+        11999        100    60      b      2.0      b       1.081265               0.540324    1.061905               1.107370         -0.045465
+        [12000 rows x 10 columns]
+
         """
         if self._aggregate_details is None:
             return None

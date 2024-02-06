@@ -22,7 +22,7 @@ setup(name="pyibl",
           "ordered_set",
           "pandas",
           "matplotlib",
-          "packaging"]
+          "packaging"],
       tests_require=["pytest"],
       python_requires=">=3.8",
       classifiers=["Intended Audience :: Science/Research",
