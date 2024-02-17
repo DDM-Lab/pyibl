@@ -1,7 +1,7 @@
 .. Copyright 2014-2024 Carnegie Mellon University
 
-PyIBL version 5.1
-*****************
+PyIBL version 5.1.1
+*******************
 
 .. contents::
 
@@ -949,6 +949,13 @@ the  blended value, *BV*, is then
 
 Changes to PyIBL
 ================
+
+Changes between versions 5.0.4 and 5.1.1
+----------------------------------------
+
+* Fixed a bug which caused some rows to be omitted from the :attr:`aggregate_details`;
+  since the :meth:`plot` method depends upon the :attr:`aggregate_details` plots weere
+  sometimes incorrect, too.
 
 Changes between versions 5.0.4 and 5.1
 --------------------------------------

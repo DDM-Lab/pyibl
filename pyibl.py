@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.1.dev1"
+__version__ = "5.1.1"
 
 PYACTUP_MINIMUM_VERSION = "2.2"
 
@@ -938,8 +938,8 @@ class Agent:
                                     self._aggregate_similarities = True
                                     agg.append(d.get("mismatch", 0))
                                     agg.extend([sim.get(a, np.nan) for a in self._attributes])
-                            if agg is not None:
-                                ad.append(agg)
+                                if agg is not None:
+                                    ad.append(agg)
                         history = []
                         self._memory.activation_history = history
             if (not self._fixed_noise):
