@@ -33,6 +33,7 @@ pkginfo==1.9.6
 pluggy==1.4.0
 prettytable==3.9.0
 -e git+ssh://git@github.com/dfmorrison/pyactup.git@2f808860a56c498dbd23f47393c3ec0101a922e8#egg=pyactup
+pyarrow
 pycparser==2.21
 Pygments==2.17.2
 -e git+ssh://git@github.com/DDM-Lab/pyibl.git@6c2689b2aa0337f5d5cbf99958174b8dd57170c1#egg=pyibl
