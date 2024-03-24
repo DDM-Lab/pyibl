@@ -9,9 +9,9 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.2"
+__version__ = "5.1.3"
 
-PYACTUP_MINIMUM_VERSION = "2.2"
+PYACTUP_MINIMUM_VERSION = "2.2.3"
 
 if "dev" in __version__:
     print("PyIBL version", __version__)

@@ -1,6 +1,6 @@
 .. Copyright 2014-2024 Carnegie Mellon University
 
-PyIBL version 5.1.2
+PyIBL version 5.1.3
 *******************
 
 .. contents::
@@ -964,8 +964,8 @@ instances for this option. If :math:`u_{i}` is the utility that was provided as 
 Changes to PyIBL
 ================
 
-Changes between versions 5.1 and 5.1.1
---------------------------------------
+Changes between versions 5.1.1 and 5.1.3
+----------------------------------------
 
 * added noise_distribution
 
