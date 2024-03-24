@@ -17,7 +17,7 @@ setup(name="pyibl",
       long_description_content_type="text/markdown",
       py_modules=["pyibl"],
       install_requires=[
-          "pyactup>=2.2",
+          "pyactup>=2.2.3",
           "prettytable",
           "ordered_set",
           "pandas",

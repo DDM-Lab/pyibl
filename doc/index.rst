@@ -1,6 +1,6 @@
 .. Copyright 2014-2024 Carnegie Mellon University
 
-PyIBL version 5.1.1
+PyIBL version 5.1.2
 *******************
 
 .. contents::
@@ -806,6 +806,8 @@ Reference
 
    .. automethod:: plot
 
+   .. autoattribute:: noise_distribution
+
    .. autoattribute:: fixed_noise
 
 .. autoclass:: DelayedResponse
@@ -961,6 +963,12 @@ instances for this option. If :math:`u_{i}` is the utility that was provided as 
 
 Changes to PyIBL
 ================
+
+Changes between versions 5.1 and 5.1.1
+--------------------------------------
+
+* added noise_distribution
+
 
 Changes between versions 5.1 and 5.1.1
 --------------------------------------

@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.1"
+__version__ = "5.1.2"
 
 PYACTUP_MINIMUM_VERSION = "2.2"
 
@@ -222,6 +222,28 @@ class Agent:
     def noise(self, value):
         if value != getattr(self._memory, "noise", None):
             self._memory.noise = float(value) if value is not None else 0.0
+
+    @property
+    def noise_distribution(self):
+        """ Provide an alternative distribution from which noise is sampled.
+        If ``None`` the default logistic distribution is used. Otherwise the value of this
+        attribute should be a callable that takes no arguments and returns a real number.
+        It will be called once each time activation noise is required and the value,
+        scaled as usual by the :attr:`noise` parameter, will be used as the activation
+        noise. A :exc:`ValueError` is raised if an attempt is made to set this attribute
+        to anything other than a callable or ``None``.
+
+        .. warning::
+            It is rarely appropriate to use ``noise_distribution``. The default logistic
+            distribution is almost always a more appropriate choice. The ability to change
+            the distribution is provided only for esoteric purposes, and care should be
+            exercised lest biologically implausible models result.
+        """
+        return self._memory.noise_distribution
+
+    @noise_distribution.setter
+    def noise_distribution(self, value):
+        self._memory.noise_distribution = value
 
     @property
     def fixed_noise(self):

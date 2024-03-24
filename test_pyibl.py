@@ -100,6 +100,16 @@ def test_noise():
     with pytest.raises(ValueError):
         a.noise = -1
 
+def test_noise_distribution():
+    a = Agent()
+    assert a.noise_distribution is None
+    a.noise_distribution = lambda: random.random() - 0.5
+    assert a.noise_distribution
+    a.noise_distribution = None
+    assert a.noise_distribution is None
+    with pytest.raises(ValueError):
+        a.noise_distribution = 1
+
 def test_temperature():
     a = Agent()
     assert a.temperature is None
