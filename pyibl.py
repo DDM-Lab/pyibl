@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.4dev1"
+__version__ = "5.1.4.dev1"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
