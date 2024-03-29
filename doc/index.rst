@@ -922,11 +922,12 @@ The activation noise, :math:`\epsilon`, implements the stochasticity of retrieva
 It is sampled from a distribution, scaled by the ``noise`` parameter. This sampling occurs every time the
 activation of an instance needs to be calculated, and is typically different each time.
 
-By default this distribution is a logistic distribution centered on zero. In the next version of PyIBL
-it is expected that the user will be able to change this distribution, if desired.
+By default this distribution is a logistic distribution centered on zero. The distribution used can be
+changed for special purposes by using an :class:`Agent`’s ``noise_distribution`` attribute, though for
+nearly all uses the default is the right choice.
 
-An :class:`Agent` has a scale parameter, :attr:`noise`. If this parameter is denoted as :math:`\sigma`, and
-if the value sampled from the distributions if :math:`\xi`, the activation noise is
+An :class:`Agent` has a scale parameter, ``noise``. If this parameter is denoted as :math:`\sigma`, and
+if the value sampled from the distribution is :math:`\xi`, the activation noise is
 
   .. math:: \epsilon = \sigma \xi
 
