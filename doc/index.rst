@@ -965,10 +965,15 @@ instances for this option. If :math:`u_{i}` is the utility that was provided as 
 Changes to PyIBL
 ================
 
+Changes between versions 5.1.3 and 5.1.4
+----------------------------------------
+
+* Fixed a bug exhibited when :attr:`default_utility` was set to exactly zero.
+
 Changes between versions 5.1.1 and 5.1.3
 ----------------------------------------
 
-* added noise_distribution
+* Added :attr:`noise_distribution`.
 
 
 Changes between versions 5.1 and 5.1.1
@@ -981,8 +986,8 @@ Changes between versions 5.1 and 5.1.1
 Changes between versions 5.0.4 and 5.1
 --------------------------------------
 
-* Add the :attr:`aggregate_details` attribute.
-* Add the :meth:`plot` method.
+* Added the :attr:`aggregate_details` attribute.
+* Added the :meth:`plot` method.
 
 Changes between versions 5.0.2 and 5.0.4
 ----------------------------------------

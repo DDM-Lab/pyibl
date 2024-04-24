@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.4.dev1"
+__version__ = "5.1.4"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
@@ -919,7 +919,7 @@ class Agent:
                 for c, q in zip(choices, queries):
                     u = self._memory.blend("_utility", q)
                     if u is None:
-                        if self._default_utility:
+                        if self._default_utility is not None:
                             if self._callable_default_utility:
                                 u = self._default_utility(c)
                             else:

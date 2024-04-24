@@ -208,6 +208,13 @@ def test_default_utility():
         a.default_utility = lambda x: 100
     with pytest.warns(UserWarning):
         a.default_utility = 0
+    a = Agent(default_utility=0)
+    results = set()
+    for _ in range(3):
+        c = a.choose(["a", "b", "c"])
+        results.add(c)
+        a.respond(-1)
+    assert results == {"a", "b", "c"}
 
 def test_advance():
     a = Agent()
