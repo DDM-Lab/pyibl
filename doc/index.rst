@@ -1,6 +1,6 @@
 .. Copyright 2014-2024 Carnegie Mellon University
 
-PyIBL version 5.1.4
+PyIBL version 5.1.5
 *******************
 
 .. contents::
