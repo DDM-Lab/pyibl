@@ -22,11 +22,10 @@ author = 'Don Morrison'
 
 # The full version, including alpha/beta/rc tags
 # from pyibl import __version__ as release
-#release = '1.0'
 
 pkg_version = __import__("pyibl").__version__.split('.')
-version = '.'.join(pkg_version[:2])
-release = '.'.join(pkg_version)
+version = '.'.join(pkg_version[:3])
+release = version
 
 # -- General configuration ---------------------------------------------------
 
@@ -53,6 +52,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'alabaster'
+html_theme_options = {
+    "fixed_sidebar": "true",
+    "logo": "pyibl.png",
+ }
+
+modindex_common_prefix = ['pyibl']
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

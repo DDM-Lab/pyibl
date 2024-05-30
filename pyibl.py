@@ -1258,7 +1258,7 @@ class Agent:
                         a.respond(3 if random.random() < 2/3 else 0)
         >>> a.plot("bv")
 
-        .. image:: bv_plot.png
+        .. image:: _static/bv_plot.png
 
         """
         if min and not isinstance(min, numbers.Real):

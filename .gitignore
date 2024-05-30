@@ -1,6 +1,8 @@
 *.pyc
-_*
 *.egg-info
+_*
+!doc/_static
+!doc/_downloads
 MANIFEST
 dist
 build
@@ -8,3 +10,4 @@ build
 .pyibl
 old-*
 plots/*.png
+venv

@@ -6,6 +6,9 @@ dist:	clean test doc
 clean:
 	rm -rf dist/*
 
+doc/_downloads/binary-choice.zip:
+	cd examples/binary-choice/ ; zip ../../doc/_downloads/binary-choice.zip *.py requirements.txt
+
 doc:
 	cd doc/ ; make html
 
