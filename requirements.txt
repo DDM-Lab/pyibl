@@ -10,6 +10,7 @@ pytest
 Sphinx
 tqdm
 twine
+wheel
 
 # Either also do a pip install pyactup, or AFTER doing a pip install -r of the above
 #   do a pip install -e <local-location-of-development-pyactup>.
