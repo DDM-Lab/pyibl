@@ -321,7 +321,7 @@ class Agent:
 
     @property
     def optimized_learning(self):
-        """Whether or not this :class:`Agent` uses the optimized_learning approximation when computing instance activations.
+        """Whether or not this :class:`Agent` uses the optimized learning approximation when computing instance activations.
         If ``False``, the default, optimized learning is not used. If ``True`` is is used
         for all cases. If a positive integer, that number of the most recent rehearsals of
         an instance are used exactly, with any older rehearsals having their contributions
