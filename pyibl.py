@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.5.dev1"
+__version__ = "5.1.5"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
@@ -1132,7 +1132,7 @@ class Agent:
             d = {name: c[a] for name, a in attrs}
             d["outcome"] = c["_utility"]
             d["created"] = c._creation
-            d["occurrences"] = c.references
+            d["occurrences"] = tuple(map(int, c.references))
             result.append(d)
         if file is None:
             return result
@@ -1291,7 +1291,7 @@ class Agent:
         data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
         plt.clf()
         for k, (t, v) in data.items():
-            plt.plot(t, v, label=k)
+            plt.plot(t, v, label=str(k))
         if title is not False:
             plt.title(title or f"{plot_kind._description} versus time")
         if legend is None:

@@ -7,6 +7,14 @@ Changes
 Version 5.1
 ===========
 
+from version 5.1.4 to 5.1.5
+---------------------------
+
+* improved the output of the instances() method
+* adjusted some issues raised by changes to recent versions of several of PyIBL’s dependencies
+* improved the documentation
+
+
 from version 5.1.3 to 5.1.4
 ---------------------------
 
