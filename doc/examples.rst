@@ -9,7 +9,6 @@ Here are gathered several larger examples of PyIBL use, many drawn from real res
    :maxdepth: 3
 
    binary-choice
+   rock-paper-scissors
    multi-agent-network
-   cooperative-navigation
    insider-attack
-   minimap

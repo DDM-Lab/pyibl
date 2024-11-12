@@ -9,12 +9,17 @@ clean:
 doc/_downloads/binary-choice.zip:
 	cd examples/binary-choice/ ; zip ../../doc/_downloads/binary-choice.zip *.py requirements.txt
 
-doc:
+doc/_downloads/rps.zip:
+	cd examples/rps/ ; zip ../../doc/_downloads/rps.zip *.py requirements.txt
+
+doc: doc/_downloads/binary-choice.zip doc/_downloads/rps.zip
 	cd doc/ ; make html
 
-upload: dist
-	twine upload dist/*
+publish: doc
 	scp -r doc/_build/html/* dfm@janus.hss.cmu.edu:/var/www/pyibl/
+
+upload: dist publish
+	twine upload dist/*
 
 test:
 	pytest

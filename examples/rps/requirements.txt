@@ -1,0 +1,6 @@
+click
+matplotlib
+pandas
+pyibl
+PyQt6
+tqdm
