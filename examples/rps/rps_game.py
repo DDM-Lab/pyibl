@@ -163,7 +163,7 @@ def main(player1, player2, rounds=1, participants=1, file=None, show_progress=No
     p1, n1 = make_player(player1)
     p2, n2 = make_player(player2)
     plot_wins_losses(RPSGame(p1, p2, rounds, participants).play(show_progress),
-                     title=f"{n1} versus\n{n2}\n(averaged over {participants} participants)",
+                     title=f"{n1} versus\n{n2}\naveraged over {participants:,} participant pairs",
                      file=file)
 
 
