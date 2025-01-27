@@ -1,4 +1,4 @@
-# Copyright 2014-2024 Carnegie Mellon University
+# Copyright 2014-2025 Carnegie Mellon University
 
 import math
 import pytest
@@ -35,7 +35,7 @@ def test_agent_init():
     assert a.mismatch_penalty is None
     assert not a.optimized_learning
     assert a.default_utility is None
-    assert not a.default_utility_populates
+    assert a.default_utility_populates
     assert a.time == 0
     with pytest.warns(UserWarning):
         a = Agent(name="Test Agent",
@@ -57,7 +57,7 @@ def test_agent_init():
     assert isclose(a.mismatch_penalty, 1)
     assert a.optimized_learning
     assert isclose(a.default_utility, 1)
-    assert not a.default_utility_populates
+    assert a.default_utility_populates
     assert a.time == 0
     assert a2.attributes == ()
     assert isclose(a2.noise, 0.25)
@@ -66,7 +66,7 @@ def test_agent_init():
     assert a2.mismatch_penalty is None
     assert not a2.optimized_learning
     assert a2.default_utility is None
-    assert not a2.default_utility_populates
+    assert a2.default_utility_populates
     assert a2.time == 0
     with pytest.raises(ValueError):
         Agent(noise=-0.001)
@@ -216,6 +216,31 @@ def test_default_utility():
         a.respond(-1)
     assert results == {"a", "b", "c"}
 
+def test_default_utility_populates():
+    a = Agent(default_utility=10)
+    assert(a.default_utility_populates is True)
+    a.choose("ab")
+    a.respond(0)
+    a.choose("ab")
+    a.respond(0)
+    assert(len(a.instances(None)) == 4)
+    assert({'decision': 'a', 'outcome': 10, 'created': 0, 'occurrences': (0,)} in a.instances(None))
+    assert({'decision': 'b', 'outcome': 10, 'created': 0, 'occurrences': (0,)} in a.instances(None))
+    a.reset(True)
+    assert(len(a.instances(None)) == 2)
+    assert({'decision': 'a', 'outcome': 10, 'created': 0, 'occurrences': (0,)} in a.instances(None))
+    assert({'decision': 'b', 'outcome': 10, 'created': 0, 'occurrences': (0,)} in a.instances(None))
+    a.reset(False)
+    assert(len(a.instances(None)) == 0)
+    a.default_utility_populates = False
+    assert(a.default_utility_populates is False)
+    a.choose("ab")
+    a.respond(0)
+    assert(len(a.instances(None)) == 1)
+    assert(a.instances(None)[0]["occurrences"] == (1,))
+    a.default_utility_populates = None
+    assert(a.default_utility_populates is False)
+
 def test_advance():
     a = Agent()
     for i in range(2):
@@ -362,7 +387,6 @@ def test_reset():
     assert isclose(a.decay, 0.55)
     assert a.time == 0
     assert len(a.instances(None)) == 0
-    a.default_utility_populates = True
     a.choose("abcde")
     assert a.time == 1
     assert len(a.instances(None)) == 5
@@ -476,21 +500,45 @@ def safe_risky(noise=0.25, decay=0.5, temperature=None, optimized_learning=False
                 a.respond(5 if random.random() < risky_wins else -5)
     return risky_chosen / (SAFE_RISKY_PARTICIPANTS * SAFE_RISKY_ROUNDS)
 
+# def test_safe_risky():
+#     # Note that tiny changes to the code could change the values being asserted.
+#     with randomseed():
+#         x = safe_risky()
+#         assert isclose(x, 0.25675)
+#         x = safe_risky(optimized_learning=True)
+#         assert isclose(x, 0.2215)
+#         x = safe_risky(decay=2)
+#         assert isclose(x, 0.1375)
+#         x = safe_risky(temperature=1, noise=0)
+#         assert isclose(x, 0.0865)
+#         x = safe_risky(risky_wins=0.6)
+#         assert isclose(x, 0.3445)
+#         x = safe_risky(risky_wins=0.4)
+#         assert isclose(x, 0.158)
+#         results = []
+#         results.append(safe_risky())
+#         results.append(safe_risky(optimized_learning=True))
+#         results.append(safe_risky(decay=2))
+#         results.append(safe_risky(temperature=1, noise=0))
+#         results.append(safe_risky(risky_wins=0.6))
+#         results.append(safe_risky(risky_wins=0.4))
+#         assert all(isclose(r, x) for r, x in zip(results, [0.224, 0.313, 0.13325, 0.161, 0.38125, 0.135]))
+
 def test_safe_risky():
     # Note that tiny changes to the code could change the values being asserted.
     with randomseed():
         x = safe_risky()
-        assert isclose(x, 0.25675)
+        assert isclose(x, 0.359)
         x = safe_risky(optimized_learning=True)
-        assert isclose(x, 0.2215)
+        assert isclose(x, 0.443)
         x = safe_risky(decay=2)
-        assert isclose(x, 0.1375)
+        assert isclose(x, 0.227)
         x = safe_risky(temperature=1, noise=0)
-        assert isclose(x, 0.0865)
+        assert isclose(x, 0.25)
         x = safe_risky(risky_wins=0.6)
-        assert isclose(x, 0.3445)
+        assert isclose(x, 0.56775)
         x = safe_risky(risky_wins=0.4)
-        assert isclose(x, 0.158)
+        assert isclose(x, 0.271)
         results = []
         results.append(safe_risky())
         results.append(safe_risky(optimized_learning=True))
@@ -498,7 +546,7 @@ def test_safe_risky():
         results.append(safe_risky(temperature=1, noise=0))
         results.append(safe_risky(risky_wins=0.6))
         results.append(safe_risky(risky_wins=0.4))
-        assert all(isclose(r, x) for r, x in zip(results, [0.224, 0.313, 0.13325, 0.161, 0.38125, 0.135]))
+        assert all(isclose(r, x) for r, x in zip(results, [0.4115, 0.45525, 0.2335, 0.24875, 0.5775, 0.3115]))
 
 def form_choice(d):
     n = random.randrange(6)

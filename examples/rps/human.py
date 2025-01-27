@@ -1,4 +1,4 @@
-# Copyright 2024 Carnegie Mellon University
+# Copyright 2024–2025 Carnegie Mellon University
 
 """
 An RPSPlayer subclass which simply solicits moves from a human player using the terminal,

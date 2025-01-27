@@ -64,4 +64,4 @@ modindex_common_prefix = ['pyibl']
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-copyright = "2014-2024 Carnegie Mellon University"
+copyright = "2014-2025 Carnegie Mellon University"

@@ -1,4 +1,4 @@
-# Copyright 2024 Carnegie Mellon University
+# Copyright 2024–2025 Carnegie Mellon University
 
 """
 A player who, by default, chooses moves uniformly at random. If bias is set it should

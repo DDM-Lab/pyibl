@@ -28,7 +28,7 @@ One  is
 which comes packaged with Python itself, so if you installed Python
 you should have it available.
 
-This document is also available at `http://pyibl.ddmlab.com/ <http://pyibl.ddmlab.com/>`_.
+This document is also available at `https://ddm-lab.github.io/pyibl-documentation/ <https://ddm-lab.github.io/pyibl-documentation/>`_.
 
 Users and others interested in PyIBL are encouraged to subscribe to the
 `PyIBL Users mailing list <https://lists.andrew.cmu.edu/mailman/listinfo/pyibl-users>`_.

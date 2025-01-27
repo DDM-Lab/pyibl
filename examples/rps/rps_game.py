@@ -1,4 +1,4 @@
-# Copyright 2024 Carnegie Mellon University
+# Copyright 2024–2025 Carnegie Mellon University
 
 """
 A framework for placing the Rock, Paper, Scissors game. Players instances of subclasses

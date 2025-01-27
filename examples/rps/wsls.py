@@ -1,4 +1,4 @@
-# Copyright 2024 Carnegie Mellon University
+# Copyright 2024–2025 Carnegie Mellon University
 
 """
 A player using a win stay, lose shift strategy. After a loss the next move is an upgrade

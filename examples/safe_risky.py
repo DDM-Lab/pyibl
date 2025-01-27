@@ -1,3 +1,5 @@
+# Copyright 2014–2025 Carnegie Mellon University
+
 import pyibl
 import random
 

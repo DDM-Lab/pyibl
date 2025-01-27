@@ -1,4 +1,4 @@
-# Copyright 2014-2024 Carnegie Mellon University
+# Copyright 2014-2025 Carnegie Mellon University
 
 """PyIBL is an implementation of a subset of Instance Based Learn Theory (IBLT). The
 principle class is :class:`Agent`, an instance of which is a cognitive entity learning and
@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.1.6.dev1"
+__version__ = "5.2.0"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
@@ -89,7 +89,7 @@ class Agent:
                  mismatch_penalty=None,
                  optimized_learning=False,
                  default_utility=None,
-                 default_utility_populates=False,
+                 default_utility_populates=True,
                  fixed_noise=False):
         self._attributes = pyactup.Memory._ensure_slot_names(attributes)
         if name is None:
@@ -638,10 +638,10 @@ class Agent:
         If at that time the value is not a function of one argument, or it does not return
         a Real, a :exc:`RuntimeError` is raised.
 
-        The :attr:`default_utility_populates` property, which is ``False`` by default,
+        The :attr:`default_utility_populates` property, which is ``True`` by default,
         controls whether or not an instance is added for each interrogation of
         the :attr:`default_utility` property. If an instance is added, it is added
-        as by :meth:`populate` at the current time.
+        as by :meth:`populate` at time zero.
 
         Setting :attr:`default_utility` to ``None`` or ``False`` (the initial default)
         causes no default utility to be used. In this case, if :meth:`choose` is called
@@ -670,7 +670,8 @@ class Agent:
     @property
     def default_utility_populates(self):
         """Whether or not a default utility provided by the :attr:`default_utility` property is also entered as an instance in memory.
-        This property has no effect if default_utility has been set to ``None`` or ``False``.
+        When such an instance is added it is added at time zero. This property has no
+        effect if default_utility has been set to ``None`` or ``False``.
         """
         return self._default_utility_populates
 

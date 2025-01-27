@@ -16,7 +16,7 @@ doc: doc/_downloads/binary-choice.zip doc/_downloads/rps.zip
 	cd doc/ ; make html
 
 publish: doc
-	scp -r doc/_build/html/* dfm@janus.hss.cmu.edu:/var/www/pyibl/
+	cp -r doc/_build/html/* ../pyibl-documentation/
 
 upload: dist publish
 	twine upload dist/*
