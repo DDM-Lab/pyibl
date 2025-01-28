@@ -7,6 +7,17 @@ Changes
 Version 5.1
 ===========
 
+from version 5.1. to 5.2.0
+---------------------------
+
+* if weights are supplied to similarities, they must sum to no more than one or a RuntimeError will be raised by choose()
+* restored former default value of default_utility_populates
+* fixed some errors in the documentation
+
+
+Version 5.1
+===========
+
 from version 5.1.4 to 5.1.5
 ---------------------------
 

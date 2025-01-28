@@ -113,6 +113,7 @@ class Agent:
         self._aggregate_iteration = 0
         self._trace = False
         self._fixed_noise = fixed_noise
+        self._weights = {}
         self.reset()
         self._test_default_utility()
 
@@ -896,6 +897,8 @@ class Agent:
         """
         if self._pending_decision:
             raise RuntimeError("choice requested before previous outcome was supplied")
+        if self._weights and (sm := sum(self._weights.values())) > 1:
+            raise RuntimeError(f"The sum of weights must be no more than one and is {sm}")
         choices = list(choices if choices is not None else [])
         if not choices:
             if self._previous_choices:
@@ -1340,7 +1343,9 @@ class Agent:
         a :exc:`RuntimeError` is raised. If, when the similarity function is called, the
         return value is not a real number a :exc:`ValueError` is raised.
 
-        The *weight* should be a positive, real number, and defaults to one.
+        The *weight*, if present, should be a positive, real number, no greater than one.
+        When :meth:`choose` is called if some attributes weights have been set then their
+        sum must be no more than one; if it is greater a :exc:`RuntimeError` is raised.
 
         Similarity functions are only called when the `Agent` has a
         :attr:`mismatch_penalty` specified. When a similarity function is called it is
@@ -1350,9 +1355,9 @@ class Agent:
         same values if passed the same arguments. If either of these constraints is
         violated no error is raised, but the results will, in most cases, be meaningless.
 
-        If one of *function* or *weight* is omitted but the other is supplied, the
-        supplied item is set with the omitted one unchanged. If called with neither
-        *function* nor *weight* the similarity function is removed.
+        If one of *function* or *weight* is omitted or ``None`` but the other is supplied,
+        the supplied item is set with the omitted one unchanged. If called with both
+        *function* nor *weight* unsupplied or ``None`` the similarity function is removed.
 
         In the following examples the height and width are assumed to range from zero to
         ten, and similarity of either is computed linearly, as the difference between them
@@ -1372,10 +1377,23 @@ class Agent:
         >>> a.similarity("color", color_similarity, 0.5)
 
         """
-        self._memory.similarity((pyactup.Memory._ensure_slot_names(attributes)
-                                 or [ "_decision" ]),
-                                function,
-                                weight)
+        if weight:
+            try:
+                if weight <= 0 or weight > 1:
+                    raise RuntimeError()
+            except:
+                raise ValueError(f"Weight {weight} is not a positive number <= 1")
+        attrs = (pyactup.Memory._ensure_slot_names(attributes) or [ "_decision" ])
+        self._memory.similarity(attrs, function, weight)
+        if (attributes is None and function is None and weight is None):
+            for a in attrs:
+                try:
+                    del self._weights[a]
+                except:
+                    pass
+        elif weight:
+            for a in attrs:
+                self._weights[a] = weight
         try:
             self._memory.index = self._preferred_index()
         except RuntimeError:

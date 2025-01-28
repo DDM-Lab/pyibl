@@ -1056,18 +1056,25 @@ def test_similarity():
     assert isclose(mismatch_value(a, 1, "0001"), -0.5)
     assert isclose(mismatch_value(a, 2, "0000"), -0.5)
     assert isclose(mismatch_value(a, 2, "0001"), 0)
-    a.similarity(None, None, 2)
+    with pytest.raises(ValueError):
+        a.similarity(weight=-0.0001)
+    with pytest.raises(ValueError):
+        a.similarity(None, None, 1.000001)
+    with pytest.raises(ValueError):
+        a.similarity(weight="foo")
+    a.similarity(None, None, 0.7)
     a.choose()
     a.respond(0)
     assert isclose(mismatch_value(a, 1, "0000"), 0)
-    assert isclose(mismatch_value(a, 1, "0001"), -2)
-    assert isclose(mismatch_value(a, 2, "0000"), -2)
+    assert isclose(mismatch_value(a, 1, "0001"), -0.7)
+    assert isclose(mismatch_value(a, 2, "0000"), -0.7)
     assert isclose(mismatch_value(a, 2, "0001"), 0)
     a.similarity([])
     a.choose()
     a.respond(0)
     assert mismatch_value(a, 1, "0000") is None
     assert mismatch_value(a, 2, "0001") is None
+
 
 def test_discrete_blend():
     a = Agent("a b", temperature=1, noise=0)
