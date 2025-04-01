@@ -21,7 +21,7 @@ In each of these conditions there is a probability of 0.5 that the reward will b
 In the first three conditions there is also a probability of 0.5 that a particular box is defended.
 These three conditions differ in the probability of the user being *told* that the box is defended.
 
-* In the "1 way" condition if the box is defended and warning signal is always given (this parameter is referred to as *p*, and in this case is thus 1);
+* In the "1 way" condition if the box is defended a warning signal is always given (this parameter is referred to as *p*, and in this case is thus 1);
   and if the box is not defended there is an 0.5 probability (this parameteer is referred to as *q*, and in this case is 0.5) that the warning
   signal is nonetheless given.
 
