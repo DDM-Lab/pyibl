@@ -3,7 +3,7 @@ Examples
 
 .. ᵢ_examples
 
-Here are gathered several larger examples of PyIBL use, many drawn from real research projects.
+Here are gathered several larger examples of PyIBL use, most drawn from real research projects.
 
 .. toctree::
    :maxdepth: 3
@@ -11,4 +11,4 @@ Here are gathered several larger examples of PyIBL use, many drawn from real res
    binary-choice
    rock-paper-scissors
    multi-agent-network
-   insider-attack
+   box-game
