@@ -38,7 +38,7 @@ Code
 ----
 
 The source file for this experiment and model can
-:download:be downloaded </_downloads/box-game.zip>`.
+:download:`be downloaded </_downloads/box-game.zip>`.
 To run this install the dependencies from the ``requirements.txt`` file and then simply call Python on the ``box_game.py`` source file.
 It will take few minutes to complete, and will then display a graph of the results, assuming ``matplotlib`` is correctly configured for your machine.
 

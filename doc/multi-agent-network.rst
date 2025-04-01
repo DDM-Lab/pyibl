@@ -235,7 +235,7 @@ This function also opens and closes the file into which the CSV data will be wri
 
 
 The entire file can
-:download:be downloaded </_downloads/multi-agent-network.zip>`
+:download:`be downloaded </_downloads/multi-agent-network.zip>`
 
 .. code-block:: python
     :linenos:
