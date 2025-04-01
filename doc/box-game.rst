@@ -2,7 +2,7 @@
 Box game example
 ****************
 
-In this game we describe an experiment involving the player having to make two different, though interrelated, decisions at each round.
+In this section we describe an experiment involving the player having to make two different, though interrelated, decisions at each round.
 This corresponds to some so far unpublished work in the DDMLab, a highly stylized example of a cyber defense task.
 
 In this game the player is given a choice of opening one of two boxes, 1 or 2, one of which contains a reward.
@@ -18,7 +18,21 @@ In each of these conditions there is a probability of 0.5 that the reward will b
 In the first three conditions there is also a probability of 0.5 that a particular box is defended.
 These three conditions differ in the probability of the user being *told* that the box is defended.
 
-[more to come]
+* In the "1 way" condition if the box is defended and warning signal is always given (this parameter is referred to as *p*, and in this case is thus 1);
+  and if the box is not defended there is an 0.5 probability (this parameteer is referred to as *q*, and in this case is 0.5) that the warning
+  signal is nonetheless given.
+
+* In the "2 way (0.75)" condition if the box is defended the warning signal is issued 75% of the time (*p* = 0.75); and if the box
+  is not defended it is issued 37.5% of the time (*q* = 0.375).
+
+* In the "2 way (0.5) condition if the box is defended the warning signal is issued 50% of the time (*p* = 0.5); and if the box
+  is not defended it is issued 25% of the time (*q* = 0.25).
+
+The fourth condition is a degenerate "control" condition in which no warning signal is ever issued (referred to as the "no signaling" condition).
+
+
+Code
+----
 
 The source file for this experiment and model can
 :download:be downloaded </_downloads/box-game.zip>`.
@@ -179,6 +193,13 @@ whether or not to attack. Once the resulting payoff is known both Agents are upd
 The ``main`` function calls ``run`` for each of the conditions, collects their results, and displays a bar graph comparing them.
 The ``click`` module is used to provide the opportunity to run things with different numbers of rounds and participatns, as well as different
 IBL parameters, though the default values of all are sensible.
+
+Note that additional conditions can be easily added by amending the definition of the ``CONDITIONS`` constant.
+
+
+Results
+-------
+
 Here is a graph of of the results when run with 1,000 participants and 50 rounds for each (the default values); note that when running
 this yourself the results may differ slightly, since the model is, of course, stochastic, but the results should be similar:
 
