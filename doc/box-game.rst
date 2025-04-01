@@ -5,6 +5,9 @@ Box game example
 In this section we describe an experiment involving the player having to make two different, though interrelated, decisions at each round.
 This corresponds to some so far unpublished work in the DDMLab, a highly stylized example of a cyber defense task.
 
+Description
+-----------
+
 In this game the player is given a choice of opening one of two boxes, 1 or 2, one of which contains a reward.
 An automated defender is defending one of the boxes, but it can defend only one.
 The player first chooses the box they are considering opening, but does not yet open it.
