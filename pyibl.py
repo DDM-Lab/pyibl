@@ -1316,7 +1316,8 @@ class Agent:
             if maxt is None or t[-1] > maxt:
                 maxt = t[-1]
             plt.plot(t, v, label=str(k))
-        t = list(range(mint, maxt + 1))
+        if mint is not None and maxt is not None:
+            t = list(range(mint, maxt + 1))
         if title is not False:
             plt.title(title or f"{plot_kind._description} versus {xlabel.lower()}")
         if legend is None:
@@ -1326,7 +1327,8 @@ class Agent:
         elif legend:
             plt.legend(legend)
         plt.xlabel(xlabel)
-        plt.xticks(Agent._xticks(t))
+        if mint is not None and maxt is not None:
+            plt.xticks(Agent._xticks(t))
         plt.ylabel(ylabel)
         plt.yticks(plot_kind.yticks())
         if limits:
