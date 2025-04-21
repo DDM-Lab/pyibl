@@ -537,9 +537,7 @@ class Agent:
         """
         if self._aggregate_details is None:
             return None
-        cols = AGGREGATE_COLUMNS
-        if self._aggregate_similarities:
-            cols += ("mismatch",) + tuple(f"{a}.similarity" for a in self._attributes)
+        cols = self._aggregate_details_columns()
         result = pd.DataFrame(self._aggregate_details, columns=cols)
         result.dropna(axis="columns", how="all", inplace=True)
         return result
@@ -552,6 +550,12 @@ class Agent:
             self._aggregate_details = None
         self._aggregate_similarities = False
         self._aggregate_iteration = 0
+
+    def _aggregate_details_columns(self):
+        cols = AGGREGATE_COLUMNS
+        if self._aggregate_similarities:
+            cols += ("mismatch",) + tuple(f"{a}.similarity" for a in self._attributes)
+        return cols
 
     @property
     def trace(self):
@@ -1164,7 +1168,7 @@ class Agent:
 
     def plot(self, kind, title=None, xlabel=None, ylabel=None,
              include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
-             legend=None, limits=None, filename=None, show=None):
+             legend=None, limits=None, filename=None, show=None, details=None):
         """Generates a variety of plots of the evolution of this Agent's state over time.
         These plots can often be helpful in understanding how a PyIBL model is working.
         To generate these plots :attr:`aggregate_details` must be set to ``True``. The
@@ -1271,13 +1275,19 @@ class Agent:
             raise ValueError("The max value, {max}, is neither a Real number nor None")
         if show is None:
             show = filename is None
-        agg = self.aggregate_details
-        if agg is None:
+        if self._aggregate_details is None:
             raise RuntimeError("Can't make plot unless aggregate_details is set")
+        if details is None:
+            agg = self.aggregate_details
+        else:
+            if not (isnstance(details, pd.DataFrame) and
+                    list(details.columns) == list(self._aggregate_details_columns())):
+                raise ValueError("The details argument is not a DataFrame with the same columns as this Agent's aggregate_details")
+            agg = details
         plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", True),
                      "bv":          OptionPlot("blended_value", "Mean blended value"),
-                     "probability": InstancePlot("retrieval_probability",
-                                                 "Mean probability of retrieval", True),
+                     "probability": RetrievalProbabilyPlot("retrieval_probability",
+                                                           "Mean probability of retrieval", True),
                      "activation":  InstancePlot("activation", "Mean total activation"),
                      "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
                      "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
@@ -1292,20 +1302,33 @@ class Agent:
                 raise ValueError(f"Unknown plot kind {kind}")
         if kind == "mismatch" and "mismatch" not in agg:
             raise ValueError("Can't generate a mismatch plot when no attributes were partially matched")
+        if xlabel is None:
+            xlabel = "Time"
+        if ylabel is None:
+            ylabel = plot_kind._description
         data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
         plt.clf()
+        mint = None
+        maxt = None
         for k, (t, v) in data.items():
+            if mint is None or t[0] < mint:
+                mint = t[0]
+            if maxt is None or t[-1] > maxt:
+                maxt = t[-1]
             plt.plot(t, v, label=str(k))
+        t = list(range(mint, maxt + 1))
         if title is not False:
-            plt.title(title or f"{plot_kind._description} versus time")
+            plt.title(title or f"{plot_kind._description} versus {xlabel.lower()}")
         if legend is None:
             legend = data and (len(data) <= LEGEND_LIMIT)
         if legend is True:
             plt.legend()
         elif legend:
             plt.legend(legend)
-        plt.xlabel(xlabel if xlabel is not None else "Time")
-        plt.ylabel(ylabel if ylabel is not None else  plot_kind._description)
+        plt.xlabel(xlabel)
+        plt.xticks(Agent._xticks(t))
+        plt.ylabel(ylabel)
+        plt.yticks(plot_kind.yticks())
         if limits:
             plt.ylim(limits)
         elif plot_kind._default_ylim:
@@ -1317,14 +1340,50 @@ class Agent:
         return plt.gcf()
 
     @staticmethod
-    def _ensure_plot_items(supplied, possibilities, argname):
+    def _xticks(times):
+        def f(x):
+            t0 = times[0]
+            result = [t0]
+            tx = math.ceil(t0 / x) * x
+            if tx - t0 < 7:
+                tx += x
+            tend = times[-1]
+            result += list(range(tx, tend + 1, x))
+            if tend - result[-1] >= 7:
+                result += [tend]
+            else:
+                result[-1] = tend
+            return result
         try:
-            if len(s := set(supplied)) < len(supplied):
-                raise ValueError(f"Duplicate {argname} in {supplied}")
-            elif len(s.intersection(possibilities)) < len(s):
-                raise ValueError(f"Unused {argname} in {supplied}")
-        except:
-            raise TypeError(f"{argname} should be a sequence of strings")
+            if (n := len(times)) <= 6:
+                return times
+            elif n <= 15:
+                return [times[i] for i in range(0, n, 2)]
+            elif n <= 80:
+                return f(10)
+            elif n < 160:
+                return f(20)
+            elif n <= 240:
+                return f(30)
+            elif n <= 310:
+                return f(40)
+            elif n <= 400:
+                return f(50)
+            else:
+                return None
+        except Error:
+            # shouldn't be possible, but just in case...
+            return None
+
+    # @staticmethod
+    # def _ensure_plot_items(supplied, possibilities, argname):
+    #     try:
+    #         if len(s := set(supplied)) < len(supplied):
+    #             raise ValueError(f"Duplicate {argname} in {supplied}")
+    #         elif len(s.intersection(possibilities)) < len(s):
+    #             raise ValueError(f"Unused {argname} in {supplied}")
+    #     except:
+    #         raise TypeError(f"{argname} should be a sequence of strings")
 
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
@@ -1407,11 +1466,15 @@ class Plot():
         self._description = description
         self._default_ylim = (-0.05, 1.05) if limit_range else None
 
-    def get_data(self, data, include, exclude, min, max):
+    def get_data(self, data, include, exclude, min, max, earliest, latest):
         raise NotImplementedError()
+
+    def yticks(self):
+        return None
 
 
 class ChoicePlot(Plot):
+
     def __init__(self, column, description, limit_range=False):
         super().__init__(column, description, limit_range)
 
@@ -1445,6 +1508,9 @@ class ChoicePlot(Plot):
                     cnt[t] = 0
             result[ch] = tuple(zip(*sorted(cnt.items())))
         return result
+
+    def yticks(self):
+        return [0.0, 0.25, 0.5, 0.75, 1.0]
 
 
 class OptionPlot(Plot):
@@ -1493,6 +1559,15 @@ class InstancePlot(Plot):
             result[f"{opt}, {util}"] = ([t for t, ignore in grouped["time"]],
                                         grouped[self._column].mean())
         return result
+
+
+class RetrievalProbabilyPlot(InstancePlot):
+
+    def __init__(self, column, description, limit_range=False):
+        super().__init__(column, description, limit_range)
+
+    def yticks(self):
+        return [0.0, 0.25, 0.5, 0.75, 1.0]
 
 
 class DelayedResponse:
