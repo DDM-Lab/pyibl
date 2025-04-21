@@ -1377,16 +1377,6 @@ class Agent:
             # shouldn't be possible, but just in case...
             return None
 
-    # @staticmethod
-    # def _ensure_plot_items(supplied, possibilities, argname):
-    #     try:
-    #         if len(s := set(supplied)) < len(supplied):
-    #             raise ValueError(f"Duplicate {argname} in {supplied}")
-    #         elif len(s.intersection(possibilities)) < len(s):
-    #             raise ValueError(f"Unused {argname} in {supplied}")
-    #     except:
-    #         raise TypeError(f"{argname} should be a sequence of strings")
-
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
         The *attributes* are names of attributes of the :class:`Agent`. The value of
