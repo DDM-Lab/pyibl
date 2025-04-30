@@ -56,6 +56,10 @@ AGGREGATE_COLUMNS = tuple(("iteration,time,choice,utility,option,blended_value,"
                            "retrieval_probability,activation,base_level_activation,"
                            "activation_noise").split(","))
 
+PLOT_COLORS = "blue,green,red,black,magenta,orange,cyan".split(",")
+PLOT_LINE_STYLES = ("-", "--", ":", "-.", (0, (3, 6)),  (5, (10, 3)), (0, (3, 2, 1, 2)),
+                    (0, (3, 3, 2, 3)))
+
 
 class Agent:
     """A cognitive entity learning and making decisions based on its experience from prior decisions.
@@ -1270,9 +1274,9 @@ class Agent:
 
         """
         if min and not isinstance(min, numbers.Real):
-            raise ValueError("The min value, {min}, is neither a Real number nor None")
+            raise ValueError(f"The min value, {min}, is neither a Real number nor None")
         if max and not isinstance(max, numbers.Real):
-            raise ValueError("The max value, {max}, is neither a Real number nor None")
+            raise ValueError(f"The max value, {max}, is neither a Real number nor None")
         if show is None:
             show = filename is None
         if self._aggregate_details is None:
@@ -1307,15 +1311,22 @@ class Agent:
         if ylabel is None:
             ylabel = plot_kind._description
         data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
+        colors_and_styles = Agent._plot_ordering(agg, data)
         plt.clf()
         mint = None
         maxt = None
-        for k, (t, v) in data.items():
+        for k in (colors_and_styles or data.keys()):
+            t, v = data[k]
+        # for k, (t, v) in data.items():
             if mint is None or t[0] < mint:
                 mint = t[0]
             if maxt is None or t[-1] > maxt:
                 maxt = t[-1]
-            plt.plot(t, v, label=str(k))
+            if colors_and_styles:
+                c, s = colors_and_styles[k]
+                plt.plot(t, v, label=str(k), color=c, ls=s)
+            else:
+                plt.plot(t, v, label=str(k))
         if mint is not None and maxt is not None:
             t = list(range(mint, maxt + 1))
         if title is not False:
@@ -1340,6 +1351,27 @@ class Agent:
         if show:
             plt.show()
         return plt.gcf()
+
+    @staticmethod
+    def _plot_ordering(df, data):
+        options = sorted(df["option"].unique())
+        if len(options) > len(PLOT_COLORS):
+            return None
+        utilities = sorted([n for n in df["utility"].unique()], reverse=True)
+        if all(math.isclose(u, round(u)) for u in utilities):
+            utilities = [int(u) for u in utilities]
+        result = {}
+        for o, c in zip(options, PLOT_COLORS):
+            if o in data:
+                result[o] = (c, PLOT_LINE_STYLES[0])
+            else:
+                line_styles = list(PLOT_LINE_STYLES)
+                for u in utilities:
+                    if (s := f"{o}, {u}") in data:
+                        if not line_styles:
+                            return None
+                        result[s] = (c, line_styles.pop(0))
+        return result
 
     @staticmethod
     def _xticks(times):
