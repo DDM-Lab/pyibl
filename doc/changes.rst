@@ -4,11 +4,19 @@ Changes
 .. _chanages:
 
 
-Version 5.1
+Version 5.2
 ===========
 
-from version 5.1. to 5.2.0
+from version 5.2.0 to 5.2.1
 ---------------------------
+
+* added the df_plot() function
+* improved the aesthetics of the plots
+* fixed some minor bugs in plot layout
+* improved the documentation
+
+from version 5.1 to 5.2.0
+-------------------------
 
 * if weights are supplied to similarities, they must sum to no more than one or a RuntimeError will be raised by choose()
 * restored former default value of default_utility_populates
