@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.2.1dev1"
+__version__ = "5.2.1"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
@@ -1273,141 +1273,12 @@ class Agent:
         .. image:: _static/bv_plot.png
 
         """
-        if min and not isinstance(min, numbers.Real):
-            raise ValueError(f"The min value, {min}, is neither a Real number nor None")
-        if max and not isinstance(max, numbers.Real):
-            raise ValueError(f"The max value, {max}, is neither a Real number nor None")
-        if show is None:
-            show = filename is None
         if self._aggregate_details is None:
             raise RuntimeError("Can't make plot unless aggregate_details is set")
-        if details is None:
-            agg = self.aggregate_details
-        else:
-            if not (isnstance(details, pd.DataFrame) and
-                    list(details.columns) == list(self._aggregate_details_columns())):
-                raise ValueError("The details argument is not a DataFrame with the same columns as this Agent's aggregate_details")
-            agg = details
-        plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", True),
-                     "bv":          OptionPlot("blended_value", "Mean blended value"),
-                     "probability": RetrievalProbabilyPlot("retrieval_probability",
-                                                           "Mean probability of retrieval", True),
-                     "activation":  InstancePlot("activation", "Mean total activation"),
-                     "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
-                     "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
-                     }.get(kind)
-        if not plot_kind:
-            if isinstance(kind, str) and kind.endswith(".similarity"):
-                if kind in agg:
-                    plot_kind = InstancePlot(kind, f"Mean similarities of {kind[0:-11]}",  True)
-                else:
-                    raise ValueError(f"The {kind[0:-11]} attribute is either absent or not partially matched")
-            else:
-                raise ValueError(f"Unknown plot kind {kind}")
-        if kind == "mismatch" and "mismatch" not in agg:
-            raise ValueError("Can't generate a mismatch plot when no attributes were partially matched")
-        if xlabel is None:
-            xlabel = "Time"
-        if ylabel is None:
-            ylabel = plot_kind._description
-        data = plot_kind.get_data(agg, include, exclude, min, max, earliest, latest)
-        colors_and_styles = Agent._plot_ordering(agg, data)
-        plt.clf()
-        mint = None
-        maxt = None
-        for k in (colors_and_styles or data.keys()):
-            t, v = data[k]
-        # for k, (t, v) in data.items():
-            if mint is None or t[0] < mint:
-                mint = t[0]
-            if maxt is None or t[-1] > maxt:
-                maxt = t[-1]
-            if colors_and_styles:
-                c, s = colors_and_styles[k]
-                plt.plot(t, v, label=str(k), color=c, ls=s)
-            else:
-                plt.plot(t, v, label=str(k))
-        if mint is not None and maxt is not None:
-            t = list(range(mint, maxt + 1))
-        if title is not False:
-            plt.title(title or f"{plot_kind._description} versus {xlabel.lower()}")
-        if legend is None:
-            legend = data and (len(data) <= LEGEND_LIMIT)
-        if legend is True:
-            plt.legend()
-        elif legend:
-            plt.legend(legend)
-        plt.xlabel(xlabel)
-        if mint is not None and maxt is not None:
-            plt.xticks(Agent._xticks(t))
-        plt.ylabel(ylabel)
-        plt.yticks(plot_kind.yticks())
-        if limits:
-            plt.ylim(limits)
-        elif plot_kind._default_ylim:
-            plt.ylim(plot_kind._default_ylim)
-        if filename:
-            plt.savefig(filename)
-        if show:
-            plt.show()
-        return plt.gcf()
-
-    @staticmethod
-    def _plot_ordering(df, data):
-        options = sorted(df["option"].unique())
-        if len(options) > len(PLOT_COLORS):
-            return None
-        utilities = sorted([n for n in df["utility"].unique()], reverse=True)
-        if all(math.isclose(u, round(u)) for u in utilities):
-            utilities = [int(u) for u in utilities]
-        result = {}
-        for o, c in zip(options, PLOT_COLORS):
-            if o in data:
-                result[o] = (c, PLOT_LINE_STYLES[0])
-            else:
-                line_styles = list(PLOT_LINE_STYLES)
-                for u in utilities:
-                    if (s := f"{o}, {u}") in data:
-                        if not line_styles:
-                            return None
-                        result[s] = (c, line_styles.pop(0))
-        return result
-
-    @staticmethod
-    def _xticks(times):
-        def f(x):
-            t0 = times[0]
-            result = [t0]
-            tx = math.ceil(t0 / x) * x
-            if tx - t0 < 7:
-                tx += x
-            tend = times[-1]
-            result += list(range(tx, tend + 1, x))
-            if tend - result[-1] >= 7:
-                result += [tend]
-            else:
-                result[-1] = tend
-            return result
-        try:
-            if (n := len(times)) <= 6:
-                return times
-            elif n <= 15:
-                return [times[i] for i in range(0, n, 2)]
-            elif n <= 80:
-                return f(10)
-            elif n < 160:
-                return f(20)
-            elif n <= 240:
-                return f(30)
-            elif n <= 310:
-                return f(40)
-            elif n <= 400:
-                return f(50)
-            else:
-                return None
-        except Error:
-            # shouldn't be possible, but just in case...
-            return None
+        return df_plot(self.aggregate_details, kind=kind, title=title,
+                       xlabel=xlabel, ylabel=ylabel, include=include, exclude=exclude,
+                       min=min, max=max, earliest=earliest, latest=latest,
+                       legend=legend, limits=limits, filename=filename, show=show)
 
     def similarity(self, attributes=None, function=None, weight=None):
         """Assigns a function and/or corresponding weight to be used when computing the similarity of attribute values.
@@ -1481,6 +1352,157 @@ class Agent:
             self._memory.index = self._preferred_index()
         except RuntimeError:
             pass
+
+
+def df_plot(df, kind, title=None, xlabel=None, ylabel=None,
+            include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
+            legend=None, limits=None, filename=None, show=None):
+    """This is similar to the :meth:`Agent.plot` method.
+    The first argument should be a Pandas DataFrame, congruent to one such as might be
+    produced by :attr:`Agent.aggrregate_details`. The plots produced are the same as would
+    have been produced by an :class:`Agent` with those aggregate details, with the rest of
+    the arguments being the same as for :meth:`Agent.plot`.
+
+    This function can sometimes be useful in specialized circumstances, such as
+    combining the results from multiple simulations using isomorphic Agents.
+
+    A :exc:`ValueError` is raised if *df* is not a DataFrame, or its columns are
+    such as might be in one produced by :attr:`Agent.aggrregate_details`. A variety
+    of other errors may be raised if values in *df* are not of the types or ranges
+    that might be expected in an :class:`Agent`'s results.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError(f"First argument to df_plot must be a DataFrame, not {df}")
+    for c in df.columns:
+        if not (c in AGGREGATE_COLUMNS + ("mismatch",) or c.endswith(".similarity")):
+            raise ValueError(f"DataFrame column {c} cannot be plotted")
+    for c in AGGREGATE_COLUMNS:
+        if c not in df.columns:
+            raise ValueError(f"The DataFrame does not contain columns {c} and cannot be plotted")
+    if min and not isinstance(min, numbers.Real):
+        raise ValueError(f"The min value, {min}, is neither a Real number nor None")
+    if max and not isinstance(max, numbers.Real):
+        raise ValueError(f"The max value, {max}, is neither a Real number nor None")
+    if show is None:
+        show = filename is None
+    plot_kind = {"choice":      ChoicePlot("choice", "Fraction making choice", True),
+                 "bv":          OptionPlot("blended_value", "Mean blended value"),
+                 "probability": RetrievalProbabilyPlot("retrieval_probability",
+                                                       "Mean probability of retrieval", True),
+                 "activation":  InstancePlot("activation", "Mean total activation"),
+                 "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
+                 "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
+                 }.get(kind)
+    if not plot_kind:
+        if isinstance(kind, str) and kind.endswith(".similarity"):
+            if kind in df:
+                plot_kind = InstancePlot(kind, f"Mean similarities of {kind[0:-11]}",  True)
+            else:
+                raise ValueError(f"The {kind[0:-11]} attribute is either absent or not partially matched")
+        else:
+            raise ValueError(f"Unknown plot kind {kind}")
+    if kind == "mismatch" and "mismatch" not in df:
+        raise ValueError("Can't generate a mismatch plot when no attributes were partially matched")
+    if xlabel is None:
+        xlabel = "Time"
+    if ylabel is None:
+        ylabel = plot_kind._description
+    data = plot_kind.get_data(df, include, exclude, min, max, earliest, latest)
+    colors_and_styles = _plot_ordering(df, data)
+    plt.clf()
+    mint = None
+    maxt = None
+    for k in (colors_and_styles or data.keys()):
+        t, v = data[k]
+        if mint is None or t[0] < mint:
+            mint = t[0]
+        if maxt is None or t[-1] > maxt:
+            maxt = t[-1]
+        if colors_and_styles:
+            c, s = colors_and_styles[k]
+            plt.plot(t, v, label=str(k), color=c, ls=s)
+        else:
+            plt.plot(t, v, label=str(k))
+    if mint is not None and maxt is not None:
+        t = list(range(mint, maxt + 1))
+    if title is not False:
+        plt.title(title or f"{plot_kind._description} versus {xlabel.lower()}")
+    if legend is None:
+        legend = data and (len(data) <= LEGEND_LIMIT)
+    if legend is True:
+        plt.legend()
+    elif legend:
+        plt.legend(legend)
+    plt.xlabel(xlabel)
+    if mint is not None and maxt is not None:
+        plt.xticks(_xticks(t))
+    plt.ylabel(ylabel)
+    plt.yticks(plot_kind.yticks())
+    if limits:
+        plt.ylim(limits)
+    elif plot_kind._default_ylim:
+        plt.ylim(plot_kind._default_ylim)
+    if filename:
+        plt.savefig(filename)
+    if show:
+        plt.show()
+    return plt.gcf()
+
+def _plot_ordering(df, data):
+    options = sorted(df["option"].unique())
+    if len(options) > len(PLOT_COLORS):
+        return None
+    utilities = sorted([n for n in df["utility"].unique()], reverse=True)
+    if all(math.isclose(u, round(u)) for u in utilities):
+        utilities = [int(u) for u in utilities]
+    result = {}
+    for o, c in zip(options, PLOT_COLORS):
+        if o in data:
+            result[o] = (c, PLOT_LINE_STYLES[0])
+        else:
+            line_styles = list(PLOT_LINE_STYLES)
+            for u in utilities:
+                if (s := f"{o}, {u}") in data:
+                    if not line_styles:
+                        return None
+                    result[s] = (c, line_styles.pop(0))
+    return result
+
+def _xticks(times):
+    def f(x):
+        t0 = times[0]
+        result = [t0]
+        tx = math.ceil(t0 / x) * x
+        if tx - t0 < 7:
+            tx += x
+        tend = times[-1]
+        result += list(range(tx, tend + 1, x))
+        if tend - result[-1] >= 7:
+            result += [tend]
+        else:
+            result[-1] = tend
+        return result
+    try:
+        if (n := len(times)) <= 6:
+            return times
+        elif n <= 15:
+            return [times[i] for i in range(0, n, 2)]
+        elif n <= 80:
+            return f(10)
+        elif n < 160:
+            return f(20)
+        elif n <= 240:
+            return f(30)
+        elif n <= 310:
+            return f(40)
+        elif n <= 400:
+            return f(50)
+        else:
+            return None
+    except Error:
+        # shouldn't be possible, but just in case...
+        return None
+
 
 
 class Plot():

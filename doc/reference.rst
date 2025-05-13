@@ -74,3 +74,4 @@ Reference
 
 .. autofunction:: bounded_quadratic_similarity
 
+.. autofunction:: df_plot
