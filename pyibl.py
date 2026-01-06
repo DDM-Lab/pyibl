@@ -488,7 +488,7 @@ class Agent:
             the noise term of  the activation computation at this time
 
         If partial matching was used at least once in this Agent since the aggregate
-        details started being record there will be additional columns following those
+        details started being recorded there will be additional columns following those
         above. The first, ``mismatch``, is the total mismatch penalty for this instance
         for this query. After this there is one column for each attribute that was
         partially matched, the similarity value computed for this attribute.
