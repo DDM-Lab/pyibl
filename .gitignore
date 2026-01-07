@@ -8,6 +8,7 @@ dist
 build
 .venv-activation-script
 .pyibl
+.DS_Store
 old-*
 plots/*.png
 venv

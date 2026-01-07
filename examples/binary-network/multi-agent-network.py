@@ -1,4 +1,4 @@
-# Copyright 2025 Carnegie Mellon University
+# Copyright 2025-2026 Carnegie Mellon University
 # Example of networked binary choice games implemented with PyIBL
 
 import click

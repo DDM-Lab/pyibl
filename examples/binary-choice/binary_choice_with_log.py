@@ -1,4 +1,4 @@
-# Copyright 2024–2025 Carnegie Mellon University
+# Copyright 2024–2026 Carnegie Mellon University
 # Binary choice example using PyIBL writing a log file
 
 import csv

@@ -1,4 +1,4 @@
-# Copyright 2019–2025 Carnegie Mellon University
+# Copyright 2019–2026 Carnegie Mellon University
 # Example of a two stage decision task modeled using PyIBL.
 
 import click

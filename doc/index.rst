@@ -1,4 +1,4 @@
-.. Copyright 2014-2025 Carnegie Mellon University
+.. Copyright 2014-2026 Carnegie Mellon University
 
 .. meta::
    :description: Documentation of PyIBL, a Python implementation of a subset of Instance Based Learning Theory for modeling decisions from experience
