@@ -9,7 +9,7 @@ facilities for inspecting details of the IBL decision making process programmati
 facilitating debugging, logging and fine grained control of complex models.
 """
 
-__version__ = "5.2.2dev1"
+__version__ = "5.2.2"
 
 PYACTUP_MINIMUM_VERSION = "2.2.3"
 
@@ -1195,6 +1195,9 @@ class Agent:
         ``"activation"``
             a plot of the activations of the various instances as a function of time
 
+        ``"noise"``
+            a plot of the activation noise term added to the various activation
+            computations as a function of time
         ``"baselevel"``
             a plot of the base level term in the activation computations of the various
             instances as a function of time
@@ -1390,6 +1393,7 @@ def df_plot(df, kind, title=None, xlabel=None, ylabel=None,
                  "probability": RetrievalProbabilyPlot("retrieval_probability",
                                                        "Mean probability of retrieval", True),
                  "activation":  InstancePlot("activation", "Mean total activation"),
+                 "noise":       InstancePlot("activation_noise", "Mean activation noise"),
                  "baselevel":   InstancePlot("base_level_activation", "Mean base level activation"),
                  "mismatch":    InstancePlot("mismatch", "Mean total mismatch penalty")
                  }.get(kind)

@@ -1346,6 +1346,7 @@ def test_plot():
     a.plot("probability", filename="plots/probability.png")
     a.plot("probability", filename="plots/safe_prob.png", exclude=["s", "not present"], earliest=3)
     a.plot("activation", filename="plots/activation.png", latest=40)
+    a.plot("noise", filename="plots/noise.png", latest=40)
     a.plot("baselevel", filename="plots/baselevel.png", include=["r", "not present"], limits=(-2, 1))
     a.plot("baselevel", filename="plots/empty.png", max=2.5, min=2.5)
 

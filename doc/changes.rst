@@ -1,11 +1,18 @@
 Changes
 ****************
 
-.. _chanages:
+.. _changes:
 
 
 Version 5.2
 ===========
+
+from version 5.2.1 to 5.2.2
+---------------------------
+
+* added "noise" to the plot types
+* minor documentation changes
+
 
 from version 5.2.0 to 5.2.1
 ---------------------------
