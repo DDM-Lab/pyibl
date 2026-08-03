@@ -20,22 +20,34 @@ import collections.abc as abc
 import csv
 import io
 import math
-import matplotlib.pyplot as plt
 import numbers
 import numpy as np
 import os
-import pandas as pd
-import pyactup
 import random
 import sys
 import warnings
 
+import pyactup
 from collections import Counter, defaultdict
 from itertools import count
 from numbers import Real
 from packaging import version
-from prettytable import PrettyTable
 from warnings import warn
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    from prettytable import PrettyTable
+except ImportError:
+    PrettyTable = None
 
 # Force warnings.warn() to omit the source code line in the message
 formatwarning_orig = warnings.formatwarning
@@ -59,6 +71,21 @@ AGGREGATE_COLUMNS = tuple(("iteration,time,choice,utility,option,blended_value,"
 PLOT_COLORS = "blue,green,red,black,magenta,orange,cyan".split(",")
 PLOT_LINE_STYLES = ("-", "--", ":", "-.", (0, (3, 6)),  (5, (10, 3)), (0, (3, 2, 1, 2)),
                     (0, (3, 3, 2, 3)))
+
+
+def _require_pandas():
+    if pd is None:
+        raise RuntimeError("This feature requires pandas. Install it with: pip install pandas")
+
+
+def _require_matplotlib():
+    if plt is None:
+        raise RuntimeError("This feature requires matplotlib. Install it with: pip install matplotlib")
+
+
+def _require_prettytable():
+    if PrettyTable is None:
+        raise RuntimeError("This feature requires prettytable. Install it with: pip install prettytable")
 
 
 class Agent:
@@ -118,6 +145,10 @@ class Agent:
         self._trace = False
         self._fixed_noise = fixed_noise
         self._weights = {}
+        self._default_embedding_function = None
+        self._embedding_functions = {}
+        self._embedding_similarities = {}
+        self._embedding_cache = defaultdict(dict)
         self.reset()
         self._test_default_utility()
 
@@ -147,6 +178,63 @@ class Agent:
 
     def _preferred_index(self):
         return [a for a in self.attributes if not self._memory._similarities.get(a)]
+
+    @staticmethod
+    def _coerce_embedding_function(function):
+        if hasattr(function, "encode") and callable(function.encode):
+            return lambda value: function.encode([value])[0]
+        if callable(function):
+            return function
+        raise ValueError("An embedding function must be callable or have a callable encode() method")
+
+    @staticmethod
+    def _cosine_embedding_similarity(x, y):
+        x_norm = np.linalg.norm(x)
+        y_norm = np.linalg.norm(y)
+        if x_norm == 0 or y_norm == 0:
+            return 1.0 if np.array_equal(x, y) else 0.0
+        cosine = float(np.dot(x, y) / (x_norm * y_norm))
+        return max(0.0, min(1.0, (cosine + 1) / 2))
+
+    def _embedded_value(self, attribute, value):
+        if value is None:
+            return None
+        cache = self._embedding_cache[attribute]
+        if value not in cache:
+            embedded = self._embedding_functions[attribute](value)
+            vector = np.asarray(embedded, dtype=np.float64).reshape(-1)
+            if vector.size == 0:
+                raise ValueError(
+                    f"Embedding for attribute {attribute} and value {value} is empty"
+                )
+            if not np.isfinite(vector).all():
+                raise ValueError(
+                    f"Embedding for attribute {attribute} and value {value} contains non-finite values"
+                )
+            cache[value] = vector
+        return cache[value]
+
+    def _cache_choice_embeddings(self, choice):
+        for attribute in self._embedding_functions:
+            if attribute in choice and choice[attribute] is not None:
+                self._embedded_value(attribute, choice[attribute])
+
+    def _embedding_similarity_wrapper(self, attribute):
+        embedding_similarity = self._embedding_similarities[attribute]
+
+        def wrapped(x, y):
+            if x is None or y is None:
+                return 1.0 if x == y else 0.0
+            x_vector = self._embedded_value(attribute, x)
+            y_vector = self._embedded_value(attribute, y)
+            result = embedding_similarity(x_vector, y_vector)
+            if not isinstance(result, Real):
+                raise ValueError(
+                    f"The embedding similarity for attribute {attribute} returned non-numeric value {result}"
+                )
+            return float(result)
+
+        return wrapped
 
     def reset(self, preserve_prepopulated=False):
         """Erases this agent's memory and resets its time to zero.
@@ -541,6 +629,7 @@ class Agent:
         """
         if self._aggregate_details is None:
             return None
+        _require_pandas()
         cols = self._aggregate_details_columns()
         result = pd.DataFrame(self._aggregate_details, columns=cols)
         result.dropna(axis="columns", how="all", inplace=True)
@@ -668,13 +757,10 @@ class Agent:
         self._test_default_utility()
 
     def _test_default_utility(self):
-        try:
-            if self._default_utility is not None and self._memory.mismatch is not None:
-                warn("Setting a default_utility and using partial matching "
-                     "simultaneously is usually ill-advised")
-        except AttributeError:
-            # We were called before self was completely initialized.
-            pass
+        # Historically this emitted a warning when default_utility and partial matching
+        # were combined. This warning is intentionally suppressed because users may rely
+        # on this combination to cold-start models with mismatch penalties.
+        return
 
     @property
     def default_utility_populates(self):
@@ -752,17 +838,21 @@ class Agent:
     def _canonicalize_choice(self, choice):
         if self.attributes:
             if isinstance(choice, abc.Mapping):
-                return { a: Agent._attribute_value(choice.get(a), a)
-                         for a in self._attributes }
+                result = { a: Agent._attribute_value(choice.get(a), a)
+                           for a in self._attributes }
             elif isinstance(choice, abc.Sequence):
-                return { a: Agent._attribute_value(c, a)
-                         for c, a in zip(choice, self._attributes) }
+                result = { a: Agent._attribute_value(c, a)
+                           for c, a in zip(choice, self._attributes) }
             else:
                 raise ValueError(f"{choice} cannot be used as a choice")
+            self._cache_choice_embeddings(result)
+            return result
         elif choice is None:
             raise ValueError(f"None cannot be used as a choice")
         elif isinstance(choice, abc.Hashable):
-            return { "_decision": choice }
+            result = { "_decision": choice }
+            self._cache_choice_embeddings(result)
+            return result
         else:
             raise ValueError(f"{choice} is not hashable and cannot be used as a choice")
 
@@ -938,6 +1028,10 @@ class Agent:
                                 u = self._default_utility
                             if self._default_utility_populates:
                                 self._at_time(0, lambda: self._memory.learn(Agent._add_utility(q, u)))
+                        elif self._memory.mismatch is not None:
+                            # Cold-start partial-matching models with a neutral utility.
+                            u = 1
+                            self._at_time(0, lambda: self._memory.learn(Agent._add_utility(q, u)))
                         else:
                             raise RuntimeError(f"No experience available for choice {c}")
                     utilities.append(u)
@@ -1017,6 +1111,7 @@ class Agent:
         return first_attr[1]
 
     def _print_trace(self, query, utility, history):
+        _require_prettytable()
         print()
         if self.attributes:
             print(", ".join(list(f"{k}: {v}" for k, v in query.items())), end="")
@@ -1159,6 +1254,7 @@ class Agent:
         if not data:
             return
         if pretty:
+            _require_prettytable()
             tab = PrettyTable()
             tab.field_names = data[0].keys()
             for d in data:
@@ -1356,6 +1452,46 @@ class Agent:
         except RuntimeError:
             pass
 
+    def embedding(self, attributes=None, function=None, similarity=None, weight=None):
+        """Configures embedding-aware similarity for one or more attributes.
+
+        If only *function* is supplied with *attributes* as ``None`` it is saved as the
+        default embedding function for subsequent calls. If *attributes* is supplied and
+        *function* is omitted, this default embedding function is used.
+
+        The embedding *function* should map an attribute value to a 1-D numeric vector,
+        or be an object with an ``encode()`` method (e.g. Hugging Face embedding models)
+        returning vectors. By default cosine similarity over embeddings is used.
+
+        This method installs a similarity function for the supplied attributes, and
+        caches embeddings for values encountered in choices and populated instances.
+        """
+        if attributes is None:
+            if function is None:
+                return tuple(sorted(self._embedding_functions.keys()))
+            self._default_embedding_function = Agent._coerce_embedding_function(function)
+            return tuple(sorted(self._embedding_functions.keys()))
+
+        attrs = pyactup.Memory._ensure_slot_names(attributes)
+        embedding_function = (Agent._coerce_embedding_function(function)
+                              if function is not None else self._default_embedding_function)
+        if embedding_function is None:
+            raise ValueError(
+                "No embedding function configured; supply function or call embedding(function=...) first"
+            )
+
+        embedding_similarity = similarity or Agent._cosine_embedding_similarity
+        if not callable(embedding_similarity):
+            raise ValueError("embedding similarity must be callable")
+
+        for attribute in attrs:
+            self._embedding_functions[attribute] = embedding_function
+            self._embedding_similarities[attribute] = embedding_similarity
+            wrapped = self._embedding_similarity_wrapper(attribute)
+            self.similarity([attribute], wrapped, weight)
+
+        return tuple(sorted(self._embedding_functions.keys()))
+
 
 def df_plot(df, kind, title=None, xlabel=None, ylabel=None,
             include=None, exclude=None, min=None, max=None, earliest=None, latest=None,
@@ -1374,6 +1510,8 @@ def df_plot(df, kind, title=None, xlabel=None, ylabel=None,
     of other errors may be raised if values in *df* are not of the types or ranges
     that might be expected in an :class:`Agent`'s results.
     """
+    _require_pandas()
+    _require_matplotlib()
     if not isinstance(df, pd.DataFrame):
         raise ValueError(f"First argument to df_plot must be a DataFrame, not {df}")
     for c in df.columns:

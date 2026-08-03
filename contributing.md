@@ -1,3 +1,5 @@
+# Contributing
+
 Generally useful adjustments and additions to PyIBL are welcome. Please clone
 the repository to your own machine, make a suitable branch, and when finished make a pull request (that’s
 the usual term in GitHub, but some  GitHub alternatives use the far clearer term “merge request” which
@@ -6,6 +8,22 @@ to ensure review and, if necessary, discussion of your changes.
 Please do ***not*** make *any* changes to the `main` branch of this repository—always make a pull request instead;
 in addition, unless there is a compelling reason to do so, please do not push any branches to the
 repository, except for those ready to be merged.
+
+## Migration Note for Contributors
+
+The repository now uses package-only runtime sources:
+
+- `pyibl/` is the PyIBL package source
+- `pyactup/` is the bundled local PyACTUp package source
+
+Please make code changes in those package directories rather than adding or
+editing legacy top-level module files.
+
+For local development and testing of this checkout in a virtual environment,
+install with editable mode:
+
+  pip install -e .
+
 Before making a pull request, please ensure
 
 - that *all* the unit tests pass

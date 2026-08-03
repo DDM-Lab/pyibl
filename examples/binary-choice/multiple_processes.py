@@ -2,10 +2,14 @@
 # Binary choice example using PyIBL and multiple processes
 
 from alhazen import IteratedExperiment
-import matplotlib.pyplot as plt
 import numpy as np
 from pyibl import Agent
 from random import random
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
 HIGH_PAYOUTS = [4, 6, 12]
 SAFE_PAYOUT = 3
@@ -41,8 +45,15 @@ def main():
                          process_count=PROCESSES)
       results = exp.run()
       for condition in exp.conditions:
-          plt.plot(range(1, ROUNDS + 1), np.mean(np.asarray(results[condition]), axis=0),
-                   label=f"risky high payoff = {condition} points")
+          risky_fractions = np.mean(np.asarray(results[condition]), axis=0)
+          if plt is None:
+              print(f"risky high payout = {condition}: final risky fraction = {risky_fractions[-1]:.3f}")
+          else:
+              plt.plot(range(1, ROUNDS + 1), risky_fractions,
+                       label=f"risky high payoff = {condition} points")
+      if plt is None:
+          print("matplotlib is not installed; plotting is disabled. Install it with: pip install matplotlib")
+          return
       plt.xticks([1] + [10 * n for n in range(1, round((ROUNDS + 10) / 10))])
       plt.ylim([0, 1])
       plt.yticks([round(n / 4, 2) for n in range(5)])

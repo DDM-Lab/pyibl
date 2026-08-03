@@ -14,17 +14,50 @@ example,
 
 import click
 from importlib import import_module
-import matplotlib.pyplot as plt
 from os import listdir
 from os.path import splitext
-import pandas as pd
 from re import fullmatch
 import sys
-from tqdm import trange
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    from tqdm import trange
+except ImportError:
+    _MISSING_TQDM_WARNED = False
+
+    def trange(*args, **kwargs):
+        global _MISSING_TQDM_WARNED
+        if not _MISSING_TQDM_WARNED:
+            print("tqdm is not installed; progress bars are disabled. Install it with: pip install tqdm")
+            _MISSING_TQDM_WARNED = True
+        return range(*args)
 
 
 MOVES = ["rock", "paper", "scissors"]
 RESULTS = ["tie", "win", "lose"]
+
+_MISSING_MATPLOTLIB_WARNED = False
+
+
+def _require_pandas():
+    if pd is None:
+        raise SystemExit("This example requires pandas. Install it with: pip install pandas")
+
+
+def _warn_missing_matplotlib():
+    global _MISSING_MATPLOTLIB_WARNED
+    if not _MISSING_MATPLOTLIB_WARNED:
+        print("matplotlib is not installed; plotting is disabled. Install it with: pip install matplotlib")
+        _MISSING_MATPLOTLIB_WARNED = True
 
 
 class RPSPlayer:
@@ -85,6 +118,7 @@ class RPSGame:
 
     def play(self, show_progress=False):
         results = []
+        _require_pandas()
         for participant in (trange(1, self._participants + 1) if show_progress
                             else range(1, self._participants + 1)):
             wins = [0, 0]
@@ -115,8 +149,12 @@ class RPSGame:
 
 
 def plot_wins_losses(df, player_no=1, title=None, file=None):
+    _require_pandas()
     if file:
         df.to_csv(file)
+    if plt is None:
+        _warn_missing_matplotlib()
+        return
     other_player = 1 if player_no==2 else 2
     df["wins"] = df.apply(lambda x: x[f"player {player_no} total wins"] / x["round"], axis=1)
     df["losses"] = df.apply(lambda x: x[f"player {other_player} total wins"] / x["round"], axis=1)
@@ -156,6 +194,7 @@ def make_player(s):
 @click.argument("player1")
 @click.argument("player2")
 def main(player1, player2, rounds=1, participants=1, file=None, show_progress=None):
+    _require_pandas()
     if file and not splitext(file)[1]:
         file += ".csv"
     if show_progress is None:

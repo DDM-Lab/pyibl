@@ -4,11 +4,38 @@
 import click
 import csv
 from itertools import count
-import matplotlib.pyplot as plt
 import numpy as np
 import pyibl
 import random
-from tqdm import tqdm
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    _MISSING_TQDM_WARNED = False
+
+    class _NoOpProgress:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def update(self, n=1):
+            pass
+
+    def tqdm(iterable=None, **kwargs):
+        global _MISSING_TQDM_WARNED
+        if not _MISSING_TQDM_WARNED:
+            print("tqdm is not installed; progress bars are disabled. Install it with: pip install tqdm")
+            _MISSING_TQDM_WARNED = True
+        if iterable is None:
+            return _NoOpProgress()
+        return iterable
 
 DEFAULT_ROUNDS = 50
 DEFAULT_PARTICIPANTS = 1000
@@ -116,6 +143,14 @@ def main(rounds, participants, noise, decay, temperature):
                         logwriter=w, progress=p)
                 for k, v in zip(results.keys(), r):
                     results[k].append(round(v, 2))
+    if plt is None:
+        print("matplotlib is not installed; plotting is disabled. Install it with: pip install matplotlib")
+        for i, condition in enumerate(CONDITIONS):
+            print(f"{condition['name']}: "
+                  f"successful attack={results['successful attack'][i]:.2f}, "
+                  f"failed attack={results['failed attack'][i]:.2f}, "
+                  f"withdrew={results['withdrew'][i]:.2f}")
+        return
     fig, ax = plt.subplots(layout='constrained')
     x = np.arange(len(CONDITIONS))
     wid = 0.25

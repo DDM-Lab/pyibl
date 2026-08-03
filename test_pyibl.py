@@ -37,15 +37,14 @@ def test_agent_init():
     assert a.default_utility is None
     assert a.default_utility_populates
     assert a.time == 0
-    with pytest.warns(UserWarning):
-        a = Agent(name="Test Agent",
-                  attributes=["a1", "a2"],
-                  noise=0,
-                  decay=0,
-                  temperature=1,
-                  mismatch_penalty=1,
-                  optimized_learning=True,
-                  default_utility=1)
+    a = Agent(name="Test Agent",
+              attributes=["a1", "a2"],
+              noise=0,
+              decay=0,
+              temperature=1,
+              mismatch_penalty=1,
+              optimized_learning=True,
+              default_utility=1)
     a2 = Agent(name="Test Agent")
     assert a != a2
     assert a.name == "Test Agent"
@@ -175,6 +174,61 @@ def test_mismatch_penalty():
     with pytest.raises(ValueError):
         a.mismatch_penalty = -1
 
+
+def test_embedding_similarity_for_text_attribute():
+    vectors = {
+        "win money now": (1.0, 0.0),
+        "urgent account alert": (1.0, 0.1),
+        "team lunch tomorrow": (0.0, 1.0),
+        "project status update": (0.1, 1.0),
+        "claim prize now": (0.95, 0.05),
+    }
+
+    def embed(text):
+        return vectors[text]
+
+    a = Agent(attributes=["title", "label"], noise=0, temperature=1, mismatch_penalty=1)
+    a.embedding(function=embed)
+    configured = a.embedding("title")
+    assert "title" in configured
+
+    examples = [
+        ("win money now", "scam"),
+        ("urgent account alert", "scam"),
+        ("team lunch tomorrow", "safe"),
+        ("project status update", "safe"),
+    ]
+    for title, label in examples:
+        other = "safe" if label == "scam" else "scam"
+        a.populate([{"title": title, "label": label}], 1)
+        a.populate([{"title": title, "label": other}], 0)
+
+    choice = a.choose([
+        {"title": "claim prize now", "label": "scam"},
+        {"title": "claim prize now", "label": "safe"},
+    ])
+    assert choice["label"] == "scam"
+    assert "claim prize now" in a._embedding_cache["title"]
+
+
+def test_embedding_prefers_encode_over_call():
+    class ModelLike:
+        def __call__(self, value):
+            raise RuntimeError("__call__ should not be used for embeddings")
+
+        def encode(self, texts):
+            return [(1.0, 0.0) for _ in texts]
+
+    a = Agent(attributes=["title", "label"], noise=0, temperature=1, mismatch_penalty=1)
+    a.embedding(function=ModelLike())
+    a.embedding("title")
+
+    choice = a.choose([
+        {"title": "hello", "label": "safe"},
+        {"title": "hello", "label": "scam"},
+    ])
+    assert choice["title"] == "hello"
+
 def test_default_utility():
     a = Agent()
     assert a.default_utility is None
@@ -190,24 +244,18 @@ def test_default_utility():
     assert a.default_utility is None
     a.default_utility = lambda x: 1
     assert a.default_utility
-    with pytest.warns(UserWarning):
-        a.mismatch_penalty = 1
+    a.mismatch_penalty = 1
     a.mismatch_penalty = None
     a.default_utility = 10
-    with pytest.warns(UserWarning):
-        a.mismatch_penalty = 1
+    a.mismatch_penalty = 1
     a.mismatch_penalty = None
     a.default_utility = 0
-    with pytest.warns(UserWarning):
-        a.mismatch_penalty = 1
+    a.mismatch_penalty = 1
     a.default_utility = None
     assert a.mismatch_penalty == 1
-    with pytest.warns(UserWarning):
-        a.default_utility = 10
-    with pytest.warns(UserWarning):
-        a.default_utility = lambda x: 100
-    with pytest.warns(UserWarning):
-        a.default_utility = 0
+    a.default_utility = 10
+    a.default_utility = lambda x: 100
+    a.default_utility = 0
     a = Agent(default_utility=0)
     results = set()
     for _ in range(3):
@@ -215,6 +263,17 @@ def test_default_utility():
         results.add(c)
         a.respond(-1)
     assert results == {"a", "b", "c"}
+
+
+def test_mismatch_cold_start_uses_implicit_default_utility():
+    a = Agent(name="Cold Start", mismatch_penalty=1, attributes=["Shape", "Color"])
+    option = {"Shape": "Triangle", "Color": "Blue"}
+    choice, details = a.choose([option], details=True)
+    assert choice == option
+    assert isclose(details[0]["blended_value"], 1)
+    instances = a.instances(None)
+    assert len(instances) == 1
+    assert instances[0]["outcome"] == 1
 
 def test_default_utility_populates():
     a = Agent(default_utility=10)

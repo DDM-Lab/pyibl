@@ -6,10 +6,47 @@ from collections import Counter
 import csv
 from datetime import datetime
 from itertools import count
-import matplotlib.pyplot as plt
 from pyibl import Agent
 import random
-from tqdm import tqdm
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    _MISSING_TQDM_WARNED = False
+
+    class _NoOpProgress:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def update(self, n=1):
+            pass
+
+    def tqdm(iterable=None, **kwargs):
+        global _MISSING_TQDM_WARNED
+        if not _MISSING_TQDM_WARNED:
+            print("tqdm is not installed; progress bars are disabled. Install it with: pip install tqdm")
+            _MISSING_TQDM_WARNED = True
+        if iterable is None:
+            return _NoOpProgress()
+        return iterable
+
+
+_MISSING_MATPLOTLIB_WARNED = False
+
+
+def _warn_missing_matplotlib():
+    global _MISSING_MATPLOTLIB_WARNED
+    if not _MISSING_MATPLOTLIB_WARNED:
+        print("matplotlib is not installed; plot generation is disabled. Install it with: pip install matplotlib")
+        _MISSING_MATPLOTLIB_WARNED = True
 
 DEFAULT_ROUNDS = 60
 DEFAULT_PARTICIPANT_SETS = 500
@@ -71,6 +108,9 @@ def run_one(agents, network, game, participant_sets, rounds, progress, csv_write
                                      p[0], choices[0], payoffs[0],
                                      p[1], choices[1], payoffs[1]))
             progress.update()
+    if plt is None:
+        _warn_missing_matplotlib()
+        return
     plt.plot(tuple(range(1, rounds + 1)),
              tuple(counts[r][("A", "A")] / (participant_sets * PAIRS) for r in range(rounds)),
              label='("A", "A")', color="green", linestyle="solid")

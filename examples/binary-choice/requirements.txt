@@ -1,5 +1,7 @@
 alhazen
-matplotlib
 numpy
 pyibl
-tqdm
+# Optional for plot image output:
+# matplotlib
+# Optional for progress bars:
+# tqdm

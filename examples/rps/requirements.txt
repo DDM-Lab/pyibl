@@ -1,6 +1,7 @@
 click
-matplotlib
 pandas
 pyibl
-PyQt6
-tqdm
+# Optional for plotting results:
+# matplotlib
+# Optional for progress bars:
+# tqdm

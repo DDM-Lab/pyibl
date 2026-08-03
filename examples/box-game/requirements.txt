@@ -1,4 +1,6 @@
 click
-matplotlib
 pyibl
-tqdm
+# Optional for chart output:
+# matplotlib
+# Optional for progress bars:
+# tqdm
