@@ -1,3 +1,15 @@
+# PyIBL 6.0: Instance Embeddings and Behavior Prediction 
+
+## This is a fork of the PyIBL python library that introduces 2 major new components
+
+### Instance Embeddings 
+
+The example of this is in the \examples\embedding folder 
+
+### Behavior Prediction
+
+The example of this is in the \examples\prediction folder 
+
 # PyIBL
 
 PyIBL is a Python implementation of a subset of Instance Based Learning Theory
