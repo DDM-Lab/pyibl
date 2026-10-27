@@ -13,8 +13,8 @@ from operator import __eq__
 from pprint import pp
 
 from pyibl import *
+from pyibl.chunk import Chunk
 import insider
-from pyactup import Chunk
 
 @contextmanager
 def randomseed(n=0):

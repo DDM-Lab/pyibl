@@ -1,58 +1,113 @@
-# PyIBL 6.0: Instance Embeddings and Behavior Prediction 
+# PyIBL 6.0
 
-## This is a fork of the PyIBL python library that introduces 2 major new components
+PyIBL 6.0 is the next major evolution of PyIBL focused on three priorities:
 
-### Instance Embeddings 
+1. performance inspired by SpeedyIBL
+2. a more mutable and hackable internal architecture
+3. modern extensions such as embedding-based similarity and behavior prediction workflows
 
-The example of this is in the \examples\embedding folder 
+This branch is an active refactor. The goal is to preserve the familiar Agent-level
+API while improving the execution engine underneath it.
 
-### Behavior Prediction
+## What PyIBL 6.0 Is
 
-The example of this is in the \examples\prediction folder 
+PyIBL is a Python implementation of core ideas from Instance Based Learning Theory (IBLT):
+an agent chooses, receives outcomes, and updates memory over repeated decisions.
 
-# PyIBL
+PyIBL 6.0 expands this with:
 
-PyIBL is a Python implementation of a subset of Instance Based Learning Theory
-(IBLT) (Cleotilde Gonzalez, Javier F. Lerch and Christian Lebiere (2003),
-Instance-based learning in dynamic decision making, Cognitive Science, 27,
-591-635. DOI: 10.1016/S0364-0213(03)00031-4). It is made and distributed by
-the Dynamic Decision Making Laboratory of Carnegie Mellon University for
-making computational cognitive models supporting research in how people make
-decisions in dynamic environments.
+- embedding-aware similarity for semantic generalization
+- prediction-oriented examples and workflows
+- a performance roadmap informed by the SpeedyIBL implementation
+- a package layout that separates core API surface from internal engine modules
 
-PyIBL requires Python version 3.8 or later. PyIBL also works in recent
-versions of PyPy.
+## Design Intent for 6.0
 
-The latest released version of PyIBL may be installed from PyPi with pip:
+- Keep the user-facing modeling flow simple: choose -> respond.
+- Improve runtime speed in hot paths (activation, blending, and retrieval loops).
+- Increase mutability for experimentation with alternative memory/similarity strategies.
+- Reduce coupling between conceptual layers so internals can evolve faster.
 
-    pip install pyibl
+## Installation
 
-For local development as an editable install (so changes in this checkout are
-immediately available to environments where you install it):
+Install for local development:
 
-    pip install -e .
+        pip install -e .
 
-Optional feature dependencies can be installed as extras:
+Optional extras:
 
-    pip install -e .[plotting]   # matplotlib + pandas for plotting/dataframe features
-    pip install -e .[tables]     # prettytable for pretty trace/chunk printing
-    pip install -e .[progress]   # tqdm for progress bars in optional scripts
+        pip install -e .[plotting]    # matplotlib + pandas
+        pip install -e .[tables]      # prettytable
+        pip install -e .[progress]    # tqdm
+        pip install -e .[embedding]   # sentence-transformers
+        pip install -e .[all]         # all optional features
 
-PyIBL now ships a local `pyactup` package in the same repository, so a separate
-`pip install pyactup` is not required.
+## Project Structure
 
-Optional embedding tutorial dependencies can be installed with:
+Top-level layout:
 
-    pip install -e .[embedding]
+        pyibl/
+            pyibl/
+                __init__.py
+                core.py
+                agent.py
+                memory.py
+                chunk.py
+                similarity.py
+                plotting.py
+            examples/
+                embedding/
+                prediction/
+                binary-choice/
+                binary-network/
+                box-game/
+                rps/
+                safe_risky.py
+            SpeedyIBL/
+                Codes/
+                speedyIBL.ipynb
+                tutorial_speedyibl.ipynb
+            doc/
+            test_pyibl.py
+            setup.py
+            pyproject.toml
+            requirements.txt
 
-Repository package layout:
+Module intent:
 
-- `pyibl/` contains the PyIBL package sources
-- `pyactup/` contains the bundled PyACTUp package sources
-- legacy top-level module files are no longer used as runtime sources
+- pyibl/core.py: primary implementation path and public model behavior.
+- pyibl/agent.py: agent-facing API boundary.
+- pyibl/memory.py and pyibl/chunk.py: mutable memory data structures and chunk storage.
+- pyibl/similarity.py: similarity functions and matching behavior.
+- pyibl/plotting.py: optional plotting/dataframe utilities.
+- examples/: runnable tutorials and experiment templates.
+- SpeedyIBL/: reference implementation used to guide optimization direction.
 
-For further information, including the documentation see the
-[online documentation](https://ddm-lab.github.io/pyibl-documentation).
+## Why the SpeedyIBL Folder Is Here
 
-PyIBL is copyright 2014-2026 by Carnegie Mellon University. It may be
-freely used, and modified, but only for research purposes.
+SpeedyIBL is a performance reference used to inform PyIBL 6.0 changes. It helps guide:
+
+- data layout decisions for fast updates
+- loop-level optimization opportunities
+- tradeoffs between readability, mutability, and speed
+
+PyIBL 6.0 is not a direct copy of SpeedyIBL. The goal is to adapt the best ideas while
+retaining PyIBL's usability and model transparency.
+
+## Initial 6.0 Refactor Roadmap
+
+1. Stabilize package boundaries and module responsibilities.
+2. Continue migrating engine responsibilities into pyibl-local internals.
+3. Benchmark choose/respond throughput and memory growth against baseline behavior.
+4. Add targeted tests for mutability-sensitive pathways.
+5. Document migration guidance for modelers.
+
+## Documentation and Background
+
+- Existing PyIBL docs: https://ddm-lab.github.io/pyibl-documentation
+- Foundational paper: Gonzalez, Lerch, and Lebiere (2003), Cognitive Science 27, 591-635.
+
+## License and Usage
+
+PyIBL is copyright 2014-2026 by Carnegie Mellon University.
+It may be freely used and modified for research purposes.

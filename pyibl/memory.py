@@ -60,12 +60,14 @@ from numbers import Real
 from pylru import lrucache
 from warnings import warn
 
+from .chunk import Chunk
+
 try:
     from prettytable import PrettyTable
 except ImportError:
     PrettyTable = None
 
-__all__ = ["__version__", "Memory"]
+__all__ = ["__version__", "Memory", "Similarity", "Chunk", "DEFAULT_NOISE", "DEFAULT_DECAY"]
 
 
 DEFAULT_NOISE = 0.25
@@ -81,6 +83,43 @@ MAXIMUM_RANDOM_SEED = 2**62
 def _require_prettytable():
     if PrettyTable is None:
         raise RuntimeError("This feature requires prettytable. Install it with: pip install prettytable")
+
+
+@dataclass
+class Similarity:
+    _memory: object = None
+    _function: callable = True
+    _derivative: callable = None
+    _weight: float = 1.0
+    _cache: lrucache = field(default_factory=lambda: lrucache(SIMILARITY_CACHE_SIZE))
+
+    def _similarity(self, x, y):
+        # Returns the mismatch penalty, a non-positive number already weighted per slot.
+        if x == y:
+            return 0
+        if self._function is True:
+            return -self._weight
+        signature = (x, y)
+        result = self._cache.get(signature)
+        if result is not None:
+            return result
+        result = self._function(x, y)
+        if result < self._memory._minimum_similarity:
+            raise ValueError(
+                f"similarity value, {result}, is less than the minimum "
+                f"allowed, {self._memory._minimum_similarity}"
+            )
+        elif result > self._memory._maximum_similarity:
+            raise ValueError(
+                f"similarity value, {result}, is greater than the maximum "
+                f"allowed, {self._memory._maximum_similarity}"
+            )
+        if not self._memory._use_actr_similarity:
+            result -= 1
+        result *= self._weight
+        self._cache[signature] = result
+        self._cache[(y, x)] = result
+        return result
 
 class Memory(dict):
     """A cognitive entity containing a collection of learned things, its chunks.
@@ -1470,92 +1509,6 @@ class Memory(dict):
                 sim._cache.clear()
 
 
-class Chunk(dict):
-    """A learned item.
-
-    A chunk acts much like a dictionary, and its slots can be retrieved with the usual
-    `[]` notation, or with `.get()`.
-    """
-
-    __slots__ = ["_name", "_memory", "_creation", "_references", "_reference_count" ]
-
-    _name_counter = 0;
-
-    def __init__(self, memory, content):
-        self._name = f"{Chunk._name_counter:04d}"
-        Chunk._name_counter += 1
-        self._memory = memory
-        self.update(content)
-        self._creation = memory._time
-        self._references = np.empty(1 if self._memory._optimized_learning != 0 else 0,
-                                    # dtype=np.int32)
-                                    dtype=np.float64)
-        self._reference_count = 0
-
-    def __repr__(self):
-        return "<Chunk {} {} {}>".format(self._name, dict(self), self._reference_count)
-
-    def __str__(self):
-        return f"Chunk-{self._name}"
-
-    @property
-    def memory(self):
-        """The :class:`Memory` object that contains this chunk."""
-        return self._memory
-
-    @property
-    def reference_count(self):
-        """A non-negative integer, the number of times that this :class:`Chunk` has been reinforced.
-        """
-        return self._reference_count
-
-    @property
-    def references(self):
-        """A tuple of real numbers, the times at which that this :class:`Chunk` has been reinforced.
-        If :attr:`optimized_learning` is being used this may be just the most recent
-        reinforcements, or an empty list, depending upon the value of
-        :attr:`optimized_learning`.
-        """
-        return tuple(self._references[:(self._reference_count
-                                        if self._memory._optimized_learning is None
-                                        else min(self._reference_count,
-                                                 self._memory._optimized_learning))])
 
 
-@dataclass
-class Similarity:
-    _memory: Memory = None
-    _function: callable = True
-    _derivative: callable = None
-    _weight: float = 1.0
-    _cache: lrucache = field(default_factory=lambda: lrucache(SIMILARITY_CACHE_SIZE))
 
-    def _similarity(self, x, y):
-        # returns the mismatch penalty, a non-positive number that has already been
-        # weighted on a per slot basis
-        if x == y:
-            return 0
-        if self._function is True:
-            return -self._weight
-        signature = (x, y)
-        result = self._cache.get(signature)
-        if result is not None:
-            return result
-        result = self._function(x, y)
-        if result < self._memory._minimum_similarity:
-            raise ValueError(f"similarity value, {result}, is less than the minimum "
-                             f"allowed, {self._memory._minimum_similarity}")
-        elif result > self._memory._maximum_similarity:
-            raise ValueError(f"similarity value, {result}, is greater than the maximum "
-                             f"allowed, {self._memory._maximum_similarity}")
-        if not self._memory._use_actr_similarity:
-            result -= 1
-        result *= self._weight
-        self._cache[signature] = result
-        self._cache[(y, x)] = result
-        return result
-
-
-# Local variables:
-# fill-column: 90
-# End:

@@ -20,7 +20,7 @@ setup(name="pyibl",
       platforms=["any"],
       long_description=DESCRIPTION,
       long_description_content_type="text/markdown",
-      packages=find_packages(include=["pyibl", "pyibl.*", "pyactup", "pyactup.*"]),
+      packages=find_packages(include=["pyibl", "pyibl.*"]),
       install_requires=[
           "numpy",
           "pylru",
